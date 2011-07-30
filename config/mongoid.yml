@@ -1,0 +1,23 @@
+development:
+  host: dbh22.mongolab.com
+  port: 27227
+  username: collage_dev
+  password: tRKU2mNngf
+  database: collage_dev
+
+test:
+  host: localhost
+  database: collage_test
+
+# set these environment variables on your prod server
+production:
+  host: <%= ENV['MONGOID_HOST'] %>
+  port: <%= ENV['MONGOID_PORT'] %>
+  username: <%= ENV['MONGOID_USERNAME'] %>
+  password: <%= ENV['MONGOID_PASSWORD'] %>
+  database: <%= ENV['MONGOID_DATABASE'] %>
+  # slaves:
+  #   - host: slave1.local
+  #     port: 27018
+  #   - host: slave2.local
+  #     port: 27019
