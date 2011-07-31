@@ -1,0 +1,16 @@
+class window.CollageCreate extends Backbone.View
+  tagName: "div"
+  className: "collage-new"
+  events: {
+    "click .button.create": "create"
+  }
+
+  render: =>
+    $(this.el).html(_.template(<%= Templater.render_template :collage_create %>))
+
+  create: (e)=>
+    e.preventDefault()
+    console.log('create')
+    console.log(new Collage({
+      title: $('input#title').val
+    }).save())

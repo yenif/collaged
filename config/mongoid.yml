@@ -1,8 +1,9 @@
 development:
-  host: dbh22.mongolab.com
-  port: 27227
-  username: collage_dev
-  password: tRKU2mNngf
+  host: localhost
+  database: collage_dev
+
+yenif:
+  host: localhost
   database: collage_dev
 
 test:

@@ -30,8 +30,7 @@ group :yenif, :development, :test, :cucumber do
   gem 'factory_girl_rails'
   gem 'capybara'
   gem 'cucumber-rails'
-  gem 'cucumber'
-  #gem "json_spec", :require => 'json_spec/cucumber'
+  gem "json_spec", :require => false
   gem 'akephalos'
   gem 'spork'
   gem 'launchy'

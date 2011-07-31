@@ -45,5 +45,10 @@ module Collage
 
     # Enable the asset pipeline
     config.assets.enabled = true
+
+    config.generators do |g|
+      g.view_specs false
+      g.helper_specs false
+    end
   end
 end
