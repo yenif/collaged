@@ -6,5 +6,5 @@ Feature: Homepage
   @javascript
   Scenario: I can create a collage from the homepage
     When I go to the homepage
-    Then I should see "Create a Collage"
+    Then I should see "Create a Collaged"
     And I should see "Title"

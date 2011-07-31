@@ -4,4 +4,4 @@
 
 require File.expand_path('../config/application', __FILE__)
 
-Collage::Application.load_tasks
+Collaged::Application.load_tasks
