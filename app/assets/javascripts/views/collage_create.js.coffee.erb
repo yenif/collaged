@@ -11,6 +11,7 @@ class window.CollageCreate extends Backbone.View
   create: (e)=>
     e.preventDefault()
     console.log('create')
-    console.log(new Collage({
-      title: $('input#title').val
-    }).save())
+    window.collage = new Collage({
+      title: $('input#title').val()
+    })
+    collage.save()

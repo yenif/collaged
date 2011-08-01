@@ -22,10 +22,8 @@ gem 'jquery-rails'
 # Use unicorn as the web server
 # gem 'unicorn'
 
-# To use debugger
-
 group :yenif, :development, :test, :cucumber do
-  gem 'ruby-debug19', :require => 'ruby-debug'
+  gem 'ruby-debug19', :require => false
   gem 'turn', :require => false
   gem 'factory_girl_rails'
   gem 'capybara'
