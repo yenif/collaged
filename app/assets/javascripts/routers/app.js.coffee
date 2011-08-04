@@ -5,7 +5,7 @@ class window.AppRouter extends Backbone.Router
     '':                'collage_new'
 
   collage_new: ->
-    (new CollageNew({el: $('div#content')})).render()
+    (window.view = new CollageNew({el: $('div#content')})).render()
 
   collage_show: (guid) ->
-    (new CollageShow({model: Collage.get(guid), el: $('div#content')})).render()
+    (window.view = new CollageShow({model: Collage.get(guid), el: $('div#content')})).render()

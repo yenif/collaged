@@ -7,7 +7,9 @@ gem 'mongo'
 gem 'bson_ext'
 gem 'therubyracer'
 gem 'mongoid'
-gem "uuidtools"
+gem 'uuidtools'
+gem 'carrierwave'
+gem 'rmagick'
 
 # Gems used only for assets and not required
 # in production environments by default.

@@ -6,7 +6,9 @@ class Photo
   field :ordinal, type: Integer
   index :ordinal
 
+  mount_uploader :image, ImageUploader
+
   embedded_in :collage
 
-  attr_accessible :caption, :ordinal
+  attr_accessible :caption, :ordinal, :image
 end
