@@ -1,0 +1,15 @@
+class window.PhotoView extends Backbone.View
+  tagName: "div"
+  className: "photo"
+  events: {
+  }
+
+  initialize: ->
+    @model.bind('change', this.render, this)
+    @model.view = this
+
+
+  render: =>
+    $(this.el).html('<img src="' + @model.get('image_url') + '" />')
+
+    return this

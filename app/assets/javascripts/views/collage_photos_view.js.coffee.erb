@@ -1,0 +1,21 @@
+class window.CollagePhotosView extends Backbone.View
+  tagName: "div"
+  className: "collage-photos"
+  events: {
+  }
+
+  initialize: ->
+    @collection.bind('add', this.render, this)
+    @collection.bind('reset', this.render, this)
+    @collection.view = this
+
+  render: =>
+    $(@el).empty()
+
+    @photo_views = @collection.map (photo) =>
+      photo.view || new PhotoView({model: photo})
+
+    _.each @photo_views, (photo_view) =>
+      $(@el).append photo_view.render().el
+
+    return this

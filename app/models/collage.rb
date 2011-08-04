@@ -32,7 +32,7 @@ class Collage
   def as_json(params = {})
     super(
       {
-        only: [:r_guid, :rw_guid, :title]
+        only: [:r_guid, :rw_guid, :title, :write_access]
       }.merge(params || {})
     ).merge(
       { id: self.to_param }
