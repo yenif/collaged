@@ -1,0 +1,13 @@
+class window.CollageShow extends Backbone.View
+  tagName: "div"
+  className: "collage-show"
+  events: {
+  }
+
+  initialize: ->
+    $(this.el).fileupload({
+      url: this.model.photos.url
+    })
+
+  render: =>
+    $(this.el).html(_.template(<%= Templater.render_template :collage_show %>,this.model.toJSON()))

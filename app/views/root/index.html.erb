@@ -1,2 +1,6 @@
-<h1>Create a Collage</h1>
-<div id='collage_create' />
+<script type='text/javascript'>
+  <% if @collage %>
+    Collage.reset(<%= [@collage].to_json.html_safe %>);
+  <% end %>
+</script>
+<div id='content' />

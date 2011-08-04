@@ -8,8 +8,21 @@
 //= require jquery_ujs
 //= require lib/underscore.js
 //= require lib/backbone.js
-//= require_self
+//= require_tree ./lib
 //= require_tree ./models
 //= require_tree ./views
-//= require_tree ./controllers
+//= require_tree ./routers
 //= require_tree
+//= require_self
+
+// Make _.template like mustache so we don't conflict with erb
+// should actually use mustache later
+_.templateSettings = {
+    interpolate : /\{\{(.+?)\}\}/g
+};
+
+// Fire everything up on page load
+$(function(){
+  window.app = new AppRouter
+  Backbone.history.start({pushState: true})
+});

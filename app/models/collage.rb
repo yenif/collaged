@@ -11,6 +11,8 @@ class Collage
 
   field :title, type: String
 
+  embeds_many :photos, order: [[:ordinal, :asc]]
+
   validates_presence_of :r_guid
   validates_presence_of :rw_guid
   validates_presence_of :title
@@ -31,9 +33,9 @@ class Collage
     super(
       {
         only: [:r_guid, :rw_guid, :title]
-      }.merge(params)
+      }.merge(params || {})
     ).merge(
-      { id: write_access ? rw_guid : r_guid }
+      { id: self.to_param }
     )
   end
 
@@ -46,7 +48,11 @@ class Collage
   end
 
   def self.find_by_guid!(*args)
-    self.find_by_guid || raise(Mongoid::Errors::DocumentNotFound)
+    self.find_by_guid(*args) || raise(Mongoid::Errors::DocumentNotFound)
+  end
+
+  def to_param
+    write_access ? rw_guid : r_guid
   end
 
   protected

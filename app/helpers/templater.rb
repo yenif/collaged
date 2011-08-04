@@ -1,3 +1,4 @@
+# http://quickleft.com/blog/rails-31-javascript-templating-with-sprockets
 module Templater
   extend self
 
