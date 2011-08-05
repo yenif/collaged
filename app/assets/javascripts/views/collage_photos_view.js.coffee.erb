@@ -3,6 +3,7 @@ class window.CollagePhotosView extends Backbone.View
   className: "collage-photos"
   events: {
   }
+    #top, left
 
   initialize: ->
     @collection.bind('add', this.render, this)
@@ -10,12 +11,39 @@ class window.CollagePhotosView extends Backbone.View
     @collection.view = this
 
   render: =>
-    $(@el).empty()
+    $(@el).empty().css({position: 'relative'})
 
-    @photo_views = @collection.map (photo) =>
+    photo_views = @collection.map (photo) =>
       photo.view || new PhotoView({model: photo})
 
-    _.each @photo_views, (photo_view) =>
-      $(@el).append photo_view.render().el
+    grid_width = 25
+    grid_x_inc = 51
+    grid_y_inc = 51
 
+    grid = []
+
+    y = 0
+    while photo_views.length > 0
+      unless grid[y]?
+        (grid[y] = []).length = grid_width
+      x = 0
+      while photo_views.length > 0 && x < grid_width
+        overlap = false
+        for i in [0...Math.ceil(photo_views[0].width/grid_x_inc)] when i + x >= grid_width || grid[y][x+i]
+          overlap = true
+
+        unless overlap
+          photo_view = photo_views.shift()
+          $(@el).append photo_view.pos(x * grid_x_inc,y * grid_y_inc).render().el
+
+          for j in [0...Math.ceil(photo_view.height/grid_y_inc)]
+            unless grid[y+j]?
+              (grid[y+j] = []).length = grid_width
+            grid[y+j][x] = true
+
+            for k in [0...Math.ceil(photo_view.width/grid_x_inc)] when k + x < grid[y].length
+              grid[y+j][x+k] = true
+
+        x++
+      y++
     return this
