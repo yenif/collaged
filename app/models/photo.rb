@@ -7,6 +7,9 @@ class Photo
   index :ordinal
 
   mount_uploader :image, ImageUploader
+  field :image_height, type: Integer
+  field :image_width, type: Integer
+  field :image_hash, type: String
 
   embedded_in :collage
 
@@ -15,7 +18,7 @@ class Photo
   def as_json(params = {})
     super(
       {
-        only: [:id,:caption, :ordinal],
+        only: [:id,:caption, :ordinal, :image_height, :image_width, :image_hash],
         methods: [:image_url]
       }.merge(params || {})
     )

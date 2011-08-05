@@ -45,4 +45,22 @@ class ImageUploader < CarrierWave::Uploader::Base
   #   "something.jpg" if original_filename
   # end
 
+  before :cache, :store_metadata
+  def store_metadata(file)
+    # store dimensions
+    img = Magick::Image.from_blob(file.read).first
+    model.image_height = img.rows
+    model.image_width = img.columns
+
+    # store img hash
+    model.image_hash = Digest::SHA1.hexdigest(file.read)
+  end
+
+  def height
+    model.image_height
+  end
+
+  def width
+    model.image_width
+  end
 end
