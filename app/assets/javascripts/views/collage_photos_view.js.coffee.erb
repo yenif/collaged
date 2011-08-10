@@ -5,45 +5,69 @@ class window.CollagePhotosView extends Backbone.View
   }
     #top, left
 
+  grid_width = 15
+  grid_x_inc = 100
+  grid_y_inc = 100
+
   initialize: ->
-    @collection.bind('add', this.render, this)
+    @collection.bind('add', this.add_photo, this)
     @collection.bind('reset', this.render, this)
     @collection.view = this
 
-  render: =>
-    $(@el).empty().css({position: 'relative'})
+  y_offset = 0
+  x = 0
+  grid = []
+  add_photo: (photo) =>
+    photo_view = photo.view || new PhotoView({model: photo})
 
-    photo_views = @collection.map (photo) =>
-      photo.view || new PhotoView({model: photo})
+    while true
+      if x >= grid_width
+        x = 0
+        grid.shift()
+        y_offset++
 
-    grid_width = 25
-    grid_x_inc = 51
-    grid_y_inc = 51
+      unless grid[0]?
+        (grid[0] = []).length = grid_width
 
+      overlap = false
+      for i in [0...(if photo.width() <= grid_width then photo.width() else grid_width)] when i + x >= grid_width || grid[0][x+i]
+        overlap = true
+
+      unless overlap
+        $(@el).append photo_view.render({
+          x: x * grid_x_inc,
+          y: y_offset * grid_y_inc,
+          w: photo.width() * grid_x_inc,
+          h: photo.height() * grid_y_inc
+        }).el
+        $(@el).css({height: (y_offset + grid.length) * grid_y_inc})
+
+        for y in [0...photo.height()]
+          unless grid[y]?
+            (grid[y] = []).length = grid_width
+          grid[y][x] = true
+
+          for k in [0...photo.width()] when k + x < grid[y].length
+            grid[y][x+k] = true
+        # end
+
+        x += photo.width()
+        return photo_view
+      else
+        x += 1
+    # If we get here something went wrong
+    return false
+
+  reset_grid: =>
+    y_offset = 0
+    x = 0
     grid = []
+    $(@el).empty().css({position: 'relative', width: grid_width, height: 100})
 
-    y = 0
-    while photo_views.length > 0
-      unless grid[y]?
-        (grid[y] = []).length = grid_width
-      x = 0
-      while photo_views.length > 0 && x < grid_width
-        overlap = false
-        for i in [0...Math.ceil(photo_views[0].width/grid_x_inc)] when i + x >= grid_width || grid[y][x+i]
-          overlap = true
 
-        unless overlap
-          photo_view = photo_views.shift()
-          $(@el).append photo_view.pos(x * grid_x_inc,y * grid_y_inc).render().el
+  render: =>
+    this.reset_grid()
+    photo_views = @collection.map (photo) =>
+      this.add_photo(photo)
 
-          for j in [0...Math.ceil(photo_view.height/grid_y_inc)]
-            unless grid[y+j]?
-              (grid[y+j] = []).length = grid_width
-            grid[y+j][x] = true
-
-            for k in [0...Math.ceil(photo_view.width/grid_x_inc)] when k + x < grid[y].length
-              grid[y+j][x+k] = true
-
-        x++
-      y++
     return this

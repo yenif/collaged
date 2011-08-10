@@ -8,37 +8,34 @@ class window.PhotoView extends Backbone.View
     @model.bind('change', this.render, this)
     @model.view = this
 
-    h = @model.get('image_height')
-    w = @model.get('image_width')
-
-    if h > w
-      if h/w > 1.5
-        @image_height = 'auto'
-        @image_width = '100px'
-      else
-        @image_height = '150px'
-        @image_width = 'auto'
-      @width = 100
-      @height = 150
+  dim: (w,h) =>
+    if h/w > @model.image_height()/@model.image_width()
+      @image_height = h + 'px'
+      @image_width = 'auto'
     else
-      if w/h > 1.5
-        @image_height = '100px'
-        @image_width = 'auto'
-      else
-        @image_height = 'auto'
-        @image_width = '150px'
-      @width = 150
-      @height = 100
+      @image_height = 'auto'
+      @image_width = w + 'px'
 
-    $(this.el).css({width: @width, height: @height})
-    $(this.el).css {overflow: 'hidden', margin: '3px', position: 'absolute'}
+    @width = w
+    @height = h
 
+    $(this.el).css {
+      width: @width, height: @height,
+      overflow: 'hidden', margin: '3px',
+      position: 'absolute'
+    }
+    return this
 
   pos: (x,y) =>
     $(this.el).css({left: x, top: y})
     return this
 
-  render: =>
+  render: (options)=>
+    if 'x' of options && 'y' of options
+      @pos(options.x, options.y)
+    if 'w' of options && 'h' of options
+      @dim(options.w,options.h)
+
     $(this.el).html(_.template(<%= Templater.render_template :photo_show %>,{
       image_url: @model.get('image_url'),
       image_width: @image_width,

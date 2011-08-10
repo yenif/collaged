@@ -17,7 +17,7 @@ class PhotosController < ApplicationController
   end
 
   def show
-    @photo = @photos.find_by_guid!(params[:id])
+    @photo = @photos.find(params[:id])
     respond_to do |format|
       format.html { render 'root/index' }
       format.json { render json: @photo }
@@ -25,7 +25,7 @@ class PhotosController < ApplicationController
   end
 
   def update
-    @photo = @photos.find_by_guid!(params[:id])
+    @photo = @photos.find(params[:id])
     respond_to do |format|
       if @photo.update_attributes(params[:photo])
         format.json { render json: @photo }

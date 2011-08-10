@@ -25,7 +25,7 @@ gem 'jquery-rails'
 # gem 'unicorn'
 
 group :yenif, :development, :test, :cucumber do
-  gem 'ruby-debug19', :require => false
+  gem 'ruby-debug19', :require => 'ruby-debug'
   gem 'turn', :require => false
   gem 'factory_girl_rails'
   gem 'capybara'

@@ -6,7 +6,6 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require lib/jquery-ui-1.8.14.custom.js
 //= require lib/underscore.js
 //= require lib/backbone.js
 //= require lib/plupload/plupload.js
