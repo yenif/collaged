@@ -14,7 +14,7 @@ class window.CollagePhotosView extends Backbone.View
     @collection.bind('reset', this.render, this)
     @collection.view = this
 
-  handle_resize: (view) =>
+  handle_resize: (view, callback) =>
     origin = $(view.el).offset()
     $(this.el).unbind('mousemove')
     $(document).mousemove (e) =>
@@ -39,11 +39,11 @@ class window.CollagePhotosView extends Backbone.View
     $(document).mouseup (f) =>
       f.preventDefault()
       $(document).unbind('mousemove')
-      view.model.save()
+      callback(f)
 
     return true
 
-  handle_move: (view) =>
+  handle_move: (view,callback) =>
     $(this.el).unbind('mousemove')
     $(this.el).mousemove (e) =>
       e.preventDefault()
@@ -52,6 +52,8 @@ class window.CollagePhotosView extends Backbone.View
     $(document).mouseup (f) =>
       f.preventDefault()
       $(this.el).unbind('mousemove')
+      callback(f)
+
     return true
 
   y_offset = 0

@@ -49,11 +49,15 @@ class window.PhotoView extends Backbone.View
       @resize_bottom = true
 
     if @resize_left || @resize_right || @resize_top || @resize_bottom
-      this.trigger('resize', this)
+      this.trigger('resize', this, @end_spatial_edit)
     else
-      this.trigger('move', this)
+      this.trigger('move', this, @end_spatial_edit)
 
     return true
+
+  end_spatial_edit: (e) =>
+    @resize_left = @resize_right = @resize_top = @resize_bottom = false
+    this.model.save()
 
   render: (options)=>
     if 'x' of options && 'y' of options
