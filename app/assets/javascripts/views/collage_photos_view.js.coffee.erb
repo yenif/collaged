@@ -1,6 +1,7 @@
 class window.CollagePhotosView extends Backbone.View
   tagName: "div"
   className: "collage-photos"
+  padding: 10
   events: {
   }
     #top, left
@@ -82,12 +83,12 @@ class window.CollagePhotosView extends Backbone.View
 
       unless overlap
         $(@el).append photo_view.render({
-          x: x * grid_x_inc,
-          y: y_offset * grid_y_inc,
+          x: x * grid_x_inc + @padding,
+          y: y_offset * grid_y_inc + @padding,
           w: photo.width() * grid_x_inc,
           h: photo.height() * grid_y_inc
         }).el
-        $(@el).css({height: (y_offset + grid.length + 1) * grid_y_inc}) # + 1 for drag buffer
+        $(@el).css({height: (y_offset + grid.length) * grid_y_inc})
 
         for y in [0...photo.height()]
           unless grid[y]?
@@ -109,10 +110,11 @@ class window.CollagePhotosView extends Backbone.View
     x = 0
     grid = []
     $(@el).children().detach()
-    $(@el).css({position: 'relative', width: grid_width * grid_x_inc, height: 100})
+    $(@el).css({position: 'relative', height: 100})
 
 
   render: =>
+    grid_width = Math.floor(($(this.el).width()) / grid_x_inc)
     this.reset_grid()
     photo_views = @collection.map (photo) =>
       this.add_photo(photo)

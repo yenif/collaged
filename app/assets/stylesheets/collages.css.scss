@@ -1,3 +1,36 @@
 // Place all the styles related to the collages controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+$width: 800px;
+$margin: 10px;
+
+@mixin center_column {
+  margin-left: auto;
+  margin-right: auto;
+  width: $width;
+}
+
+div#content {
+  #header {
+    @include center_column;
+  }
+
+  #new_collage_form{
+    @include center_column;
+  }
+
+  #collage_photos {
+    @include center_column;
+    position: relative;
+    border: 2px;
+    border-style: dashed;
+    border-radius: 10px;
+    padding: $margin;
+  }
+
+  #toolbox {
+    position: absolute;
+    top: $margin;
+    right: $margin;
+  }
+}
