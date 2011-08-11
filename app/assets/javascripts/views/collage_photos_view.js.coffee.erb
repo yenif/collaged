@@ -5,7 +5,7 @@ class window.CollagePhotosView extends Backbone.View
   }
     #top, left
 
-  grid_width = 15
+  grid_width = 8
   grid_x_inc = 100
   grid_y_inc = 100
 
@@ -14,11 +14,56 @@ class window.CollagePhotosView extends Backbone.View
     @collection.bind('reset', this.render, this)
     @collection.view = this
 
+  handle_resize: (view) =>
+    origin = $(view.el).offset()
+    $(this.el).unbind('mousemove')
+    $(document).mousemove (e) =>
+      e.preventDefault()
+
+      x = Math.round((e.pageX - origin.left)/grid_x_inc)
+      y = Math.round((e.pageY - origin.top)/grid_y_inc)
+
+      # currently don't support resize to the upper left
+      if x < 1
+        x = 1
+      if y < 1
+        y = 1
+
+      if x != view.model.width() || y != view.model.height()
+        view.model.width(x)
+        view.model.height(y)
+        @render()
+
+      console.log(x + ',' + y)
+
+    $(document).mouseup (f) =>
+      f.preventDefault()
+      $(document).unbind('mousemove')
+      view.model.save()
+
+    return true
+
+  handle_move: (view) =>
+    $(this.el).unbind('mousemove')
+    $(this.el).mousemove (e) =>
+      e.preventDefault()
+      console.log(e.pageX + ',' + e.pageY)
+
+    $(document).mouseup (f) =>
+      f.preventDefault()
+      $(this.el).unbind('mousemove')
+    return true
+
   y_offset = 0
   x = 0
   grid = []
   add_photo: (photo) =>
-    photo_view = photo.view || new PhotoView({model: photo})
+    if photo.view?
+      photo_view = photo.view
+    else
+      photo_view = new PhotoView({grid_inc: {grid_x_inc, grid_y_inc}, model: photo, parent: this})
+      photo_view.bind("resize", @handle_resize)
+      photo_view.bind("move", @handle_move)
 
     while true
       if x >= grid_width
@@ -40,7 +85,7 @@ class window.CollagePhotosView extends Backbone.View
           w: photo.width() * grid_x_inc,
           h: photo.height() * grid_y_inc
         }).el
-        $(@el).css({height: (y_offset + grid.length) * grid_y_inc})
+        $(@el).css({height: (y_offset + grid.length + 1) * grid_y_inc}) # + 1 for drag buffer
 
         for y in [0...photo.height()]
           unless grid[y]?
@@ -49,7 +94,6 @@ class window.CollagePhotosView extends Backbone.View
 
           for k in [0...photo.width()] when k + x < grid[y].length
             grid[y][x+k] = true
-        # end
 
         x += photo.width()
         return photo_view
@@ -62,7 +106,8 @@ class window.CollagePhotosView extends Backbone.View
     y_offset = 0
     x = 0
     grid = []
-    $(@el).empty().css({position: 'relative', width: grid_width, height: 100})
+    $(@el).children().detach()
+    $(@el).css({position: 'relative', width: grid_width * grid_x_inc, height: 100})
 
 
   render: =>

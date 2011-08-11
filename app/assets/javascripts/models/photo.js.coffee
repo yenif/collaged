@@ -6,17 +6,34 @@ class Photo extends Backbone.Model
 
     return this.get('size') ? 1
 
-  height: (h) =>
+  _height: (h) =>
     if h?
       this.set({height: h})
 
     return this.get('height') ? 1
 
-  width: (w) =>
+  height: (h) =>
+    if h?
+      @_height(h)
+      @custom_aspect(true)
+      @size(@_width() * @_height())
+
+    return @_height()
+
+  _width: (w) =>
     if w?
       this.set({width: w})
 
     return this.get('width') ? 1
+
+  # public
+  width: (w) =>
+    if w?
+      @_width(w)
+      @custom_aspect(true)
+      @size(@_width() * @_height())
+
+    return @_width()
 
   custom_aspect: (b) =>
     if b?
@@ -31,11 +48,11 @@ class Photo extends Backbone.Model
     return this.get('image_width') ? 0
 
   set_default_dimensions: =>
-    unless @width() * @height() == @size()
+    unless @_width() * @_height() == @size()
       factors = Math.factors(@size())
 
       if @custom_aspect()
-        aspect = @height() / @width()
+        aspect = @_height() / @_width()
       else
         aspect = @image_height() / @image_width()
 
@@ -57,8 +74,8 @@ class Photo extends Backbone.Model
         else
           break
 
-      @height(factors[nearest_index])
-      @width(@size() / factors[nearest_index])
+      @_height(factors[nearest_index])
+      @_width(@size() / factors[nearest_index])
 
     return this
 

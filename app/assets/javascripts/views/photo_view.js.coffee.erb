@@ -2,6 +2,7 @@ class window.PhotoView extends Backbone.View
   tagName: "div"
   className: "photo"
   events: {
+    "mousedown": 'start_spatial_edit'
   }
 
   initialize: ->
@@ -9,26 +10,50 @@ class window.PhotoView extends Backbone.View
     @model.view = this
 
   dim: (w,h) =>
+    # padding
+    w -= 2
+    h -= 2
+
     if h/w > @model.image_height()/@model.image_width()
       @image_height = h + 'px'
+      @image_top = '0px'
       @image_width = 'auto'
+      @image_left = Math.floor((((w / @model.image_width()) * @model.image_height()) - h) / 2) + 'px'
     else
       @image_height = 'auto'
+      @image_top = Math.floor((((h / @model.image_height()) * @model.image_width()) - w) / 2) + 'px'
       @image_width = w + 'px'
+      @image_left = '0px'
 
     @width = w
     @height = h
 
-    $(this.el).css {
-      width: @width, height: @height,
-      overflow: 'hidden', margin: '3px',
-      position: 'absolute'
-    }
+    $(this.el).css {width: @width, height: @height}
+
     return this
 
   pos: (x,y) =>
-    $(this.el).css({left: x, top: y})
+    $(this.el).css({left: x + 1, top: y + 1})
     return this
+
+  start_spatial_edit: (e) =>
+    e.preventDefault()
+    if e.layerX < 10
+      @resize_left = true
+    else if e.layerX > @width - 10
+      @resize_right = true
+    
+    if e.layerY < 10
+      @resize_top = true
+    else if e.layerY > @height - 10
+      @resize_bottom = true
+
+    if @resize_left || @resize_right || @resize_top || @resize_bottom
+      this.trigger('resize', this)
+    else
+      this.trigger('move', this)
+
+    return true
 
   render: (options)=>
     if 'x' of options && 'y' of options
@@ -36,10 +61,17 @@ class window.PhotoView extends Backbone.View
     if 'w' of options && 'h' of options
       @dim(options.w,options.h)
 
+    $(this.el).css {
+      overflow: 'hidden', position: 'absolute'
+    }
+
     $(this.el).html(_.template(<%= Templater.render_template :photo_show %>,{
       image_url: @model.get('image_url'),
+      width: @width,
+      height: @height,
       image_width: @image_width,
-      image_height: @image_height
+      image_height: @image_height,
+      image_left: @image_left,
+      image_top: @image_top,
     }))
-
     return this
