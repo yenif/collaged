@@ -4,7 +4,7 @@ class Photo
   field :caption, type: String
 
   field :ordinal, type: Integer
-  index :ordinal
+  index ordinal: 1
 
   field :size, type: Integer
   field :height, type: Integer

@@ -37,15 +37,18 @@ class window.PhotoView extends Backbone.View
     return this
 
   start_spatial_edit: (e) =>
+    x = e.offsetX
+    y = e.offsetY
+
     e.preventDefault()
-    if e.layerX < 10
+    if x < 10
       @resize_left = true
-    else if e.layerX > @width - 10
+    else if x > @width - 10
       @resize_right = true
     
-    if e.layerY < 10
+    if y < 10
       @resize_top = true
-    else if e.layerY > @height - 10
+    else if y > @height - 10
       @resize_bottom = true
 
     if @resize_left || @resize_right || @resize_top || @resize_bottom

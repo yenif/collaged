@@ -2,10 +2,10 @@ class Collage
   include Mongoid::Document
 
   field :r_guid, type: String
-  index :r_guid, unique: true
+  index({r_guid: 1}, {unique: true})
 
   field :rw_guid, type: String
-  index :rw_guid, unique: true
+  index({rw_guid: 1}, {unique: true})
 
   before_validation :initialize_guids, on: :create
 

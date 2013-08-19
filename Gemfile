@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'rails', '~>3.1.0.rc'
+gem 'rails'
 gem "rails_best_practices"
 
 gem 'mongo'
@@ -8,14 +8,14 @@ gem 'bson_ext'
 gem 'therubyracer'
 gem 'mongoid'
 gem 'uuidtools'
-gem 'carrierwave'
+gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'rmagick'
 
 # Gems used only for assets and not required
 # in production environments by default.
 group :assets do
-  gem 'sass-rails', "~> 3.1.0.rc"
-  gem 'coffee-rails', "~> 3.1.0.rc"
+  gem 'sass-rails'
+  gem 'coffee-rails'
   gem 'uglifier'
 end
 
@@ -25,11 +25,11 @@ gem 'jquery-rails'
 # gem 'unicorn'
 
 group :yenif, :development, :test, :cucumber do
-  gem 'ruby-debug19', :require => 'ruby-debug'
+  gem 'debugger'
   gem 'turn', :require => false
   gem 'factory_girl_rails'
   gem 'capybara'
-  gem 'cucumber-rails'
+  gem 'cucumber-rails', :require => false
   gem "json_spec", :require => false
   gem 'akephalos'
   gem 'spork'
