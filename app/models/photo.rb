@@ -1,5 +1,6 @@
 class Photo
   include Mongoid::Document
+  include Mongoid::Timestamps
 
   field :caption, type: String
 

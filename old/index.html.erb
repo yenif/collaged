@@ -1,0 +1,6 @@
+<script type='text/javascript'>
+  <% if @collage %>
+    Collage.reset(<%= [@collage].to_json.html_safe %>);
+  <% end %>
+</script>
+<div id='content'></div>

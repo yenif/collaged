@@ -1,5 +1,6 @@
 class Collage
   include Mongoid::Document
+  include Mongoid::Timestamps
 
   field :r_guid, type: String
   index({r_guid: 1}, {unique: true})

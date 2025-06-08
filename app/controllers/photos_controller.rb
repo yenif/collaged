@@ -1,5 +1,5 @@
 class PhotosController < ApplicationController
-  before_filter :scope_photos
+  before_action :scope_photos
   def index
     respond_to do |format|
       format.json { render json: @photos }
@@ -27,7 +27,7 @@ class PhotosController < ApplicationController
   def update
     @photo = @photos.find(params[:id])
     respond_to do |format|
-      if @photo.update_attributes(params[:photo])
+      if @photo.update(photo_params)
         format.json { render json: @photo }
       else
         format.json { render json: @photo.errors, status: :unprocessable_entity }
@@ -41,3 +41,15 @@ class PhotosController < ApplicationController
     @photos = @collage.photos
   end
 end
+
+
+private
+
+  private
+
+
+  private
+
+  def photo_params
+    params.require(:photo).permit(:caption, ordinal, image, size, height, width, custom_aspect, :image, :image_cache)
+  end
