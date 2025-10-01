@@ -75,13 +75,22 @@ export default class extends Controller {
     this.rafId = requestAnimationFrame(() => {
       const rect = this.element.getBoundingClientRect()
 
-      // Calculate grid coordinates
-      const x = Math.round((event.clientX - rect.left) / this.gridXInc)
-      const y = Math.round((event.clientY - rect.top) / this.gridYInc)
+      // Start with current dimensions
+      let newWidth = this.widthValue
+      let newHeight = this.heightValue
 
-      // Enforce minimum 1x1
-      const newWidth = Math.max(1, x)
-      const newHeight = Math.max(1, y)
+      // Only update the dimension for the edge being dragged
+      if (this.resizeEdge.right || this.resizeEdge.left) {
+        // Horizontal resize: calculate grid cells based on mouse position
+        const x = Math.round((event.clientX - rect.left) / this.gridXInc)
+        newWidth = Math.max(1, x)
+      }
+
+      if (this.resizeEdge.bottom || this.resizeEdge.top) {
+        // Vertical resize: calculate grid cells based on mouse position
+        const y = Math.round((event.clientY - rect.top) / this.gridYInc)
+        newHeight = Math.max(1, y)
+      }
 
       // Only update if dimensions changed
       if (newWidth !== this.widthValue || newHeight !== this.heightValue) {
