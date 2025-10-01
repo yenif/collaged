@@ -130,7 +130,7 @@ Rails monolith structure at repository root:
   - **Test**: `git tag -l | grep rails-4.2`
   - **Rollback**: `git tag -d rails-4.2-stable`
 
-- [ ] **T012** Upgrade Rails 4.2 → 5.2.8.1
+- [x] **T012** Upgrade Rails 4.2 → 5.2.8.1
   - Update `Gemfile`: `gem 'rails', '~> 5.2.8'`
   - Run `rails app:update`
   - Update `config/application.rb` for Rails 5.2

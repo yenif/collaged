@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby '2.7.8'
-gem 'rails', '~> 5.2.8'
+gem 'rails', '~> 6.1.7'
 gem 'bootsnap', require: false
 gem 'bigdecimal', '~> 1.4'
 gem "rails_best_practices"
@@ -9,7 +9,7 @@ gem "rails_best_practices"
 gem 'mongo', '~> 2.13'
 gem 'bson', '~> 4.0'
 gem 'mini_racer'
-gem 'mongoid', '~> 6.4'
+gem 'mongoid', '~> 7.5'
 gem 'uuidtools'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'rmagick', '~> 4.0'
