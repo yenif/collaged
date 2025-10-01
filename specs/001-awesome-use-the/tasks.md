@@ -171,7 +171,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout .ruby-version Gemfile`
 
-- [ ] **T017** Upgrade Mongoid 3.1.4 → 9.0.x
+- [x] **T017** Upgrade Mongoid 3.1.4 → 9.0.x
   - Update `Gemfile`: `gem 'mongoid', '~> 9.0'`
   - Run `rails g mongoid:config` and merge with existing config
   - Update model syntax: `order: [[:ordinal, :asc]]` → `order: :ordinal.asc`
