@@ -360,3 +360,237 @@ With all technology decisions finalized:
 4. Update CLAUDE.md with modernization context
 
 **Status**: ✅ Phase 0 Complete - All NEEDS CLARIFICATION resolved
+
+---
+
+## Addendum: Frontend Functionality Diagnostic (2025-09-30)
+
+### Context
+After completing the Rails 7.2 + Hotwire modernization, user reports: "get frontend collage editing functionality working again"
+
+### Diagnostic Research Questions
+
+#### 1. What specific symptoms indicate "not working"?
+
+**Possible Issues**:
+- Stimulus controllers not loading/connecting
+- Event communication broken between controllers
+- API endpoints returning errors or wrong JSON format
+- CSS not applied (grid layout broken)
+- JavaScript errors in browser console
+- CSRF token missing/invalid
+- Turbo Drive interfering with JavaScript
+
+**Investigation Needed**: Run application and document specific failures
+
+#### 2. How to verify Stimulus controller health?
+
+**Verification Steps**:
+```javascript
+// Check if Stimulus is loaded
+console.log(window.Stimulus)
+
+// Check if controllers are registered
+console.log(Stimulus.controllers.map(c => c.identifier))
+
+// Verify controller connection
+// Should see in console:
+// "Grid controller connected"
+// "Upload controller connected"
+// "PhotoResize controller connected"
+```
+
+**Common Connection Issues**:
+- Missing `data-controller` attributes in HTML
+- Typos in controller names (snake-case vs camelCase)
+- JavaScript not loaded due to importmap issues
+- Turbo caching previous page state
+
+#### 3. How to verify API endpoint JSON format?
+
+**Test Commands**:
+```bash
+# Create test collage
+curl -X POST http://localhost:3000/collages \
+  -H "Content-Type: application/json" \
+  -d '{"collage": {"title": "Test"}}'
+
+# Upload photo
+curl -X POST http://localhost:3000/collages/:guid/photos \
+  -F "photo[image]=@test.jpg"
+
+# Get photos
+curl http://localhost:3000/collages/:guid/photos \
+  -H "Accept: application/json"
+```
+
+**Expected JSON Format**:
+```json
+{
+  "id": {"$oid": "..."},
+  "image_url": "/uploads/...",
+  "width": 3,
+  "height": 2,
+  "size": 6,
+  "image_width": 1920,
+  "image_height": 1080,
+  "image_hash": "...",
+  "custom_aspect": false
+}
+```
+
+#### 4. How to verify Hotwire configuration?
+
+**Check Turbo Status**:
+```javascript
+// In browser console
+console.log(Turbo)
+console.log(Turbo.session.drive) // Should be true unless disabled
+```
+
+**Potential Issues**:
+- Turbo intercepts AJAX calls
+- Form submissions redirected instead of returning JSON
+- Page cached by Turbo, controllers don't reinitialize
+- Need `data-turbo="false"` on forms/links
+
+**Solution**: May need to disable Turbo on collage editor page:
+```erb
+<div data-turbo="false">
+  <!-- Collage editor content -->
+</div>
+```
+
+#### 5. How to verify CSS is loaded?
+
+**Inspection Steps**:
+- Check `app/assets/stylesheets/application.css` exists
+- Verify asset pipeline compilation: `rake assets:precompile`
+- Check if styles applied in browser DevTools
+- Look for 404 errors on CSS files in Network tab
+
+**Required Styles**:
+```css
+#collage_photos {
+  position: relative;
+  /* height set dynamically by grid_controller.js */
+}
+
+.photo {
+  position: absolute;
+  overflow: hidden;
+  /* left, top, width, height set dynamically */
+}
+```
+
+#### 6. How to verify event communication?
+
+**Debug Event Flow**:
+```javascript
+// In upload_controller.js (already has this)
+this.dispatch('photoUploaded', { detail: { photo: photoData } })
+
+// In grid_controller.js (already has this)
+this.element.addEventListener('upload:photoUploaded', this.handlePhotoUploaded)
+
+// Add temporary logging
+handlePhotoUploaded(event) {
+  console.log('Photo uploaded event received:', event.detail)
+  // ...
+}
+```
+
+**Common Event Issues**:
+- Event listener attached to wrong element
+- Event doesn't bubble to listener
+- Controller namespace mismatch
+- Event dispatched before listener attached
+
+### Diagnostic Checklist
+
+Run these tests in order to identify root cause:
+
+1. **[ ] Server starts successfully**
+   ```bash
+   rails server
+   # Should start on port 3000 without errors
+   ```
+
+2. **[ ] MongoDB connection works**
+   ```bash
+   rails console
+   > Collage.count
+   # Should return number, not error
+   ```
+
+3. **[ ] Collage creation works**
+   - Visit http://localhost:3000
+   - Enter title, click "Create"
+   - Should redirect to collage editor
+
+4. **[ ] Stimulus controllers load**
+   - Open browser console
+   - Should see "Grid controller connected" etc.
+
+5. **[ ] Photo upload form appears**
+   - Should see "choose files" link
+   - Should see file input (hidden)
+
+6. **[ ] Drag-and-drop area is active**
+   - Try dragging file over page
+   - Should show drag-over feedback
+
+7. **[ ] Photo upload works**
+   - Select/drop image file
+   - Check browser console for errors
+   - Check Network tab for API request/response
+
+8. **[ ] Photos render in grid**
+   - After upload completes
+   - Should see photo positioned in grid
+   - Check if img src is valid
+
+9. **[ ] Photo resize works**
+   - Hover near photo edge (within 10px)
+   - Cursor should change to resize cursor
+   - Click and drag should resize photo
+
+10. **[ ] Grid re-flows after resize**
+    - After resizing a photo
+    - Grid should recalculate positions
+    - Photos should reposition automatically
+
+### Recommended Fix Order
+
+Based on typical post-migration issues:
+
+1. **Fix importmap/JavaScript loading** (most common)
+   - Verify `config/importmap.rb` has correct pins
+   - Run `bin/importmap pin @hotwired/stimulus @hotwired/turbo-rails`
+
+2. **Fix CSRF token** (if API calls fail with 422)
+   - Verify `<%= csrf_meta_tags %>` in layout
+   - Verify `csrfToken()` method works in controllers
+
+3. **Fix Turbo interference** (if events don't fire)
+   - Add `data-turbo="false"` to collage editor
+   - Or disable Turbo globally: `Turbo.session.drive = false`
+
+4. **Fix ObjectId handling** (if photos don't render)
+   - Ensure controllers handle `{$oid: "..."}` format
+   - May need to adjust API serialization
+
+5. **Fix CSS** (if layout is broken)
+   - Verify asset pipeline compilation
+   - Check for CSS conflicts with Turbo classes
+
+### Key Findings
+
+**Root Cause Hypotheses** (in order of likelihood):
+1. **Importmap configuration issue** - Stimulus controllers not loading
+2. **Turbo Drive interference** - Events not firing, form submissions redirected
+3. **CSRF token issue** - API calls failing with 422 Unprocessable Entity
+4. **ObjectId serialization** - Frontend can't parse MongoDB IDs
+5. **CSS not loading** - Grid layout visually broken
+
+**Status**: Diagnostic research complete. Ready for Phase 1 (design verification) and Phase 2 (task generation).

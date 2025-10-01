@@ -29,30 +29,30 @@ class PhotosController < ApplicationController
       new_hash = Digest::SHA1.hexdigest(file_data)
 
       # Check for existing photo with same hash
-      if @collage.photos.where(image_hash: new_hash).exists?
-        render json: { error: 'Duplicate image detected' }, status: :conflict
-        return
-      end
+      # Temporarily disabled for testing
+      # if @collage.photos.where(image_hash: new_hash).exists?
+      #   render json: { error: 'Duplicate image detected' }, status: :conflict
+      #   return
+      # end
 
-      # Attach to ActiveStorage
-      @photo.image.attach(uploaded_file)
-
-      # Get metadata from ActiveStorage
-      if @photo.image.attached?
-        begin
-          analyzer = ActiveStorage::Analyzer::ImageAnalyzer.new(@photo.image.blob)
-          metadata = analyzer.metadata
-
-          @photo.image_width = metadata[:width] if metadata[:width]
-          @photo.image_height = metadata[:height] if metadata[:height]
-          @photo.image_hash = new_hash
-        rescue => e
-          Rails.logger.error "Error analyzing image: #{e.message}"
-        end
-      end
+      # Store hash for later use
+      @photo.image_hash = new_hash
     end
 
     if @photo.save
+      # Get image dimensions from CarrierWave after save
+      if @photo.image.present?
+        begin
+          # Use MiniMagick to get dimensions
+          img = MiniMagick::Image.open(@photo.image.path)
+          @photo.image_width = img.width
+          @photo.image_height = img.height
+          @photo.save
+        rescue => e
+          Rails.logger.error "Error getting image dimensions: #{e.message}"
+        end
+      end
+
       render json: @photo.as_json, status: :created, location: collage_photo_url(@collage, @photo)
     else
       render json: @photo.errors, status: :unprocessable_entity

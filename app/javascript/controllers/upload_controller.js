@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { DirectUpload } from "@rails/activestorage"
 
 // Connects to data-controller="upload"
 export default class extends Controller {

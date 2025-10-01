@@ -12,3 +12,15 @@ Rails.application.config.assets.paths << Rails.root.join('node_modules')
 # application.js, application.css, and all non-JS/CSS in the app/assets
 # folder are already added.
 # Rails.application.config.assets.precompile += %w( admin.js admin.css )
+
+# Precompile Stimulus controllers
+Rails.application.config.assets.precompile += %w(
+  controllers/hello_controller.js
+  controllers/collage_form_controller.js
+  controllers/upload_controller.js
+  controllers/photo_resize_controller.js
+  controllers/grid_controller.js
+  controllers/helpers/math_helpers.js
+  controllers/application.js
+  controllers/index.js
+)

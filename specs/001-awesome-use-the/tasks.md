@@ -1,700 +1,474 @@
-# Tasks: Collaged Full Dependency Modernization
+# Tasks: Restore Frontend Collage Editing Functionality
 
-**Feature**: Modernize Rails 3.2.14 + Backbone.js to Rails 7.2 + Hotwire
+**Feature**: Fix frontend after Rails 7.2 + Hotwire modernization
+**Branch**: `001-awesome-use-the`
 **Input**: Design documents from `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/`
 **Prerequisites**: plan.md, research.md, data-model.md, contracts/collaged-api.yaml, quickstart.md
 
 ## Overview
 
-This document contains 62 dependency-ordered tasks for incrementally modernizing the Collaged application from 2013-era technology stack to modern Rails 7.2 + Hotwire, while preserving all 53 functional requirements.
+The Rails 7.2 + Hotwire modernization has been completed, but the user reports that "frontend collage editing functionality" needs to be "working again". This task list focuses on diagnosing and fixing specific frontend issues to restore full functionality.
 
-**Constitutional Principles Applied**:
-- Feature Preservation (NON-NEGOTIABLE)
-- Incremental Modernization
-- Test Coverage Before Changes
-- Technology Stack Modernization
-- Data Integrity
-- Performance Preservation
-- Documentation and Knowledge Transfer
+**Key Focus Areas**:
+- Stimulus controller loading and connectivity
+- Event communication between controllers
+- API endpoint JSON responses
+- Turbo Drive configuration
+- CSS and grid layout
+- CSRF token handling
 
 ## Path Conventions
 
-Rails monolith structure at repository root:
-- Models: `app/models/`
+Rails 7.2 monolith at repository root:
 - Controllers: `app/controllers/`
+- Models: `app/models/`
 - Views: `app/views/`
-- JavaScript: `app/javascript/` (Rails 7.x)
-- Tests: `spec/` (RSpec), `spec/system/` (system tests)
+- JavaScript: `app/javascript/controllers/`
+- Styles: `app/assets/stylesheets/`
+- Tests: `spec/`
 - Config: `config/`
 
-## Phase P0: Characterization (BEFORE ANY CHANGES)
+## Phase D1: Diagnostic Tasks (Identify Root Cause)
 
-**CRITICAL**: These tasks must complete FIRST to establish behavioral baseline.
+**CRITICAL**: Complete ALL diagnostic tasks before attempting fixes. These run in parallel to identify issues quickly.
 
-- [x] **T001** Document current test suite status in `docs/characterization/test-baseline.md`
-  - Run existing RSpec + Cucumber tests
-  - Document passing, failing, and skipped tests
-  - Create coverage report (SimpleCov)
-  - **Acceptance**: Baseline documented with test counts and coverage percentage
-  - **Test**: `bundle exec rspec && bundle exec cucumber`
-  - **Rollback**: Delete docs/characterization/ directory
+- [x] **T001** [P] Verify Rails server starts without errors
+  - Run `rails server` and check startup logs
+  - Verify no dependency errors or missing gems
+  - Check MongoDB connection status
+  - **Acceptance**: Server starts on port 3000, no errors in console
+  - **Test**: `curl http://localhost:3000`
+  - **Files**: N/A (diagnostic only)
 
-- [x] **T002** [P] Create characterization tests for Collage CRUD in `spec/models/collage_spec.rb`
-  - Test current GUID generation behavior (UUIDTools)
-  - Test find_by_guid with r_guid and rw_guid
-  - Test write_access flag behavior
-  - Test title validation
-  - **Acceptance**: Tests pass on current codebase (Rails 3.2)
-  - **Test**: `bundle exec rspec spec/models/collage_spec.rb`
-  - **Rollback**: `git checkout spec/models/collage_spec.rb`
+- [x] **T002** [P] Test MongoDB connectivity and data integrity
+  - Run `rails console` and execute `Collage.count`
+  - Verify existing collages load correctly
+  - Check photo embeds are accessible
+  - **Acceptance**: MongoDB queries work, no Mongoid errors
+  - **Test**: `rails console -e 'puts Collage.count'`
+  - **Files**: N/A (diagnostic only)
 
-- [x] **T003** [P] Create characterization tests for Photo model in `spec/models/photo_spec.rb`
-  - Test grid dimension calculation (prime factorization)
-  - Test aspect ratio preservation
-  - Test image_hash generation (SHA1)
-  - Test ordinal sorting
-  - Test size = width × height constraint
-  - **Acceptance**: Tests document current behavior
-  - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
-  - **Rollback**: `git checkout spec/models/photo_spec.rb`
+- [x] **T003** [P] Verify importmap configuration and JavaScript loading
+  - Check `config/importmap.rb` has correct pins for Hotwire
+  - Verify `app/javascript/application.js` exists and loads
+  - Run `bin/importmap audit` to check for issues
+  - **Acceptance**: All JavaScript dependencies properly pinned
+  - **Test**: `bin/importmap audit`
+  - **Files**: `config/importmap.rb`, `app/javascript/application.js`
 
-- [x] **T004** [P] Document legacy JavaScript behavior in `docs/characterization/frontend-baseline.md`
-  - Backbone.js routes and models
-  - jQuery event handlers
-  - Plupload upload flow (document runtime selection: HTML5 vs Flash/Silverlight fallbacks if present)
-  - Drag-and-drop resize interactions
-  - Multi-file selection behavior
-  - Progress tracking mechanism
-  - **Acceptance**: All JS interactions documented with runtime capabilities
-  - **Test**: Manual review + inspect Plupload initialization code
-  - **Rollback**: Delete docs/characterization/frontend-baseline.md
+- [x] **T004** [P] Test Stimulus controller registration in browser console
+  - Start server, navigate to collage editor
+  - Open browser DevTools console
+  - Check for "Grid controller connected", "Upload controller connected", "PhotoResize controller connected" logs
+  - Verify `window.Stimulus` is defined
+  - Verify `Stimulus.controllers.map(c => c.identifier)` shows controllers
+  - **Acceptance**: All three controllers load and connect
+  - **Test**: Manual browser inspection
+  - **Files**: `app/javascript/controllers/*_controller.js`
 
-- [x] **T005** [P] Export production MongoDB schema to `docs/characterization/mongodb-schema.json`
-  - Run `mongodump --db collaged_production`
-  - Document indexes, field types, sample data
-  - Verify no orphaned data
-  - **Acceptance**: Schema export complete with validation
-  - **Test**: `mongo collaged_development --eval 'db.collages.findOne()'`
-  - **Rollback**: No rollback needed (read-only)
+- [x] **T005** [P] Inspect API endpoint responses for correct JSON format
+  - Create test collage via web UI
+  - Check browser Network tab for JSON responses
+  - Verify ObjectId format: `{"id": {"$oid": "..."}}`
+  - Test GET `/collages/:guid/photos` endpoint
+  - **Acceptance**: API returns valid JSON with proper ObjectId serialization
+  - **Test**: `curl http://localhost:3000/collages/:guid/photos -H "Accept: application/json"`
+  - **Files**: `app/controllers/photos_controller.rb`, `app/controllers/collages_controller.rb`
 
-- [x] **T006** [P] Create performance baseline in `docs/characterization/performance-baseline.md`
-  - Measure page load times (Lighthouse)
-  - Measure drag-and-drop FPS
-  - Measure image upload duration
-  - Document memory usage
-  - **Acceptance**: Metrics documented for comparison
-  - **Test**: `lighthouse http://localhost:3000/collages/[GUID]`
-  - **Rollback**: Delete docs/characterization/performance-baseline.md
+- [x] **T006** [P] Check browser console for JavaScript errors
+  - Navigate to collage editor page
+  - Open DevTools console
+  - Document all errors, warnings, and failed network requests
+  - Check for CORS, CSP, or module loading errors
+  - **Acceptance**: List of all JavaScript errors documented
+  - **Test**: Manual browser inspection
+  - **Files**: N/A (diagnostic only)
 
-- [x] **T007** Tag repository checkpoint
-  - Create git tag: `characterization-complete`
-  - **Acceptance**: Tag created, all P0 tasks complete
-  - **Test**: `git tag -l | grep characterization-complete`
-  - **Rollback**: `git tag -d characterization-complete`
+- [x] **T007** [P] Verify CSS loading and grid layout styles
+  - Check `app/assets/stylesheets/application.css` exists
+  - Verify asset pipeline compilation works
+  - Inspect grid container and photo elements in browser DevTools
+  - Check if `position: relative` on container, `position: absolute` on photos
+  - **Acceptance**: CSS loads, grid styles are applied
+  - **Test**: `RAILS_ENV=production rails assets:precompile`
+  - **Files**: `app/assets/stylesheets/application.css`
 
----
+- [x] **T008** [P] Verify CSRF token in HTML meta tag
+  - View page source of collage editor
+  - Check for `<meta name="csrf-token" content="...">` in `<head>`
+  - Verify `csrf_meta_tags` helper in layout
+  - **Acceptance**: CSRF token present and accessible
+  - **Test**: View source or `curl -s http://localhost:3000/collages/:guid | grep csrf-token`
+  - **Files**: `app/views/layouts/application.html.erb`
 
-## Phase P1: Foundation Upgrade (Ruby + Rails + Mongoid)
+- [x] **T009** [P] Check Turbo Drive configuration and interference
+  - Verify Turbo is loaded: check `window.Turbo` in console
+  - Check if Turbo Drive is enabled: `Turbo.session.drive`
+  - Test if form submissions are being intercepted by Turbo
+  - Check if page is cached by Turbo (causing stale state)
+  - **Acceptance**: Turbo configuration documented
+  - **Test**: Manual browser console inspection
+  - **Files**: `app/views/collages/show.html.erb`, `app/views/layouts/application.html.erb`
 
-**CRITICAL PATH**: Sequential upgrades with test validation at each step.
-
-- [x] **T008** Upgrade Ruby 1.9.2 → 2.7.8
-  - Update `.ruby-version`
-  - Update Gemfile `ruby` directive
-  - Run `bundle install`
-  - Fix Ruby 2.7 deprecation warnings
-  - **Acceptance**: Test suite passes on Ruby 2.7
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout .ruby-version Gemfile Gemfile.lock`
-
-- [x] **T009** Upgrade Rails 3.2.14 → 4.2.11.3 (EOL but necessary step)
-  - Update `Gemfile`: `gem 'rails', '~> 4.2.11'`
-  - Run `bundle update rails`
-  - Update `config/application.rb` for Rails 4.2
-  - Migrate `attr_accessible` → strong_parameters in controllers
-  - Update routes syntax
-  - **Acceptance**: `rails server` starts, test suite passes
-  - **Test**: `bundle exec rspec && rails server`
-  - **Rollback**: `git checkout Gemfile* config/ app/controllers/`
-
-- [x] **T010** Update Rails 4.2 deprecation warnings
-  - Fix ActiveRecord relation warnings
-  - Update test helper configurations
-  - Remove deprecated `before_filter` → `before_action`
-  - **Acceptance**: No Rails deprecation warnings in test output
-  - **Test**: `bundle exec rspec 2>&1 | grep DEPRECATION`
-  - **Rollback**: `git checkout app/`
-
-- [x] **T011** Tag checkpoint: `rails-4.2-stable`
-  - **Acceptance**: Tag created, tests passing
-  - **Test**: `git tag -l | grep rails-4.2`
-  - **Rollback**: `git tag -d rails-4.2-stable`
-
-- [x] **T012** Upgrade Rails 4.2 → 5.2.8.1
-  - Update `Gemfile`: `gem 'rails', '~> 5.2.8'`
-  - Run `rails app:update`
-  - Update `config/application.rb` for Rails 5.2
-  - Migrate asset pipeline to Webpacker
-  - Update secrets.yml → credentials
-  - **Acceptance**: Test suite passes on Rails 5.2
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile* config/`
-
-- [x] **T013** Upgrade Rails 5.2 → 6.1.7.6
-  - Update `Gemfile`: `gem 'rails', '~> 6.1.7'`
-  - Run `rails app:update`
-  - Add Zeitwerk autoloading
-  - Update ActiveRecord schema format
-  - **Acceptance**: Test suite passes on Rails 6.1
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile* config/`
-
-- [x] **T014** Tag checkpoint: `rails-6.1-stable`
-  - **Acceptance**: Tag created, tests passing
-  - **Test**: `git tag -l | grep rails-6.1`
-  - **Rollback**: `git tag -d rails-6.1-stable`
-
-- [x] **T015** Upgrade Rails 6.1 → 7.2.x
-  - Update `Gemfile`: `gem 'rails', '~> 7.2'`
-  - Run `rails app:update`
-  - Migrate Webpacker → Propshaft/import maps
-  - Update ActiveStorage configuration
-  - **Acceptance**: Test suite passes on Rails 7.2
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile* config/`
-
-- [x] **T016** Upgrade Ruby 2.7 → 3.3.x
-  - Update `.ruby-version` to `3.3.0`
-  - Update Gemfile `ruby` directive
-  - Fix Ruby 3.x keyword argument warnings
-  - **Acceptance**: Test suite passes on Ruby 3.3 + Rails 7.2
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout .ruby-version Gemfile`
-
-- [x] **T017** Upgrade Mongoid 3.1.4 → 9.0.x
-  - Update `Gemfile`: `gem 'mongoid', '~> 9.0'`
-  - Run `rails g mongoid:config` and merge with existing config
-  - Update model syntax: `order: [[:ordinal, :asc]]` → `order: :ordinal.asc`
-  - Test query compatibility
-  - **Acceptance**: MongoDB queries work correctly
-  - **Test**: `bundle exec rspec spec/models/`
-  - **Rollback**: `git checkout Gemfile* config/mongoid.yml app/models/`
-
-- [x] **T018** Create MongoDB indexes for modern Mongoid
-  - Run `rails db:mongoid:create_indexes`
-  - Verify `r_guid`, `rw_guid` unique indexes
-  - Verify `photos.ordinal`, `photos.image_hash` indexes
-  - **Acceptance**: All indexes present
-  - **Test**: `mongo collaged_development --eval 'db.collages.getIndexes()'`
-  - **Rollback**: `mongo collaged_development --eval 'db.collages.dropIndexes()'`
-
-- [x] **T019** Tag checkpoint: `rails-7.2-mongoid-9-stable`
-  - **Acceptance**: Tag created, full test suite passes
-  - **Test**: `bundle exec rspec && bundle exec rails server`
-  - **Rollback**: `git tag -d rails-7.2-mongoid-9-stable`
+- [x] **T010** [P] Test event communication between controllers
+  - Add console.log statements in grid_controller.js `handlePhotoUploaded`
+  - Add console.log in upload_controller.js before `dispatch('photoUploaded')`
+  - Upload a photo and verify events fire
+  - Check if event namespace matches (e.g., `upload:photoUploaded`)
+  - **Acceptance**: Event flow documented, identify any broken communication
+  - **Test**: Manual test with browser console open
+  - **Files**: `app/javascript/controllers/grid_controller.js`, `app/javascript/controllers/upload_controller.js`
 
 ---
 
-## Phase P2: Backend Modernization (Image Processing + API)
+## Phase D2: Fix Tasks (Apply Targeted Fixes)
 
-**Prerequisites**: Phase P1 complete (Rails 7.2 + Mongoid 9.x)
+**IMPORTANT**: Only execute fixes for issues identified in Phase D1. Skip irrelevant fixes.
 
-- [x] **T020** Install ActiveStorage and libvips
-  - Run `rails active_storage:install`
-  - Run migrations
-  - Install libvips: `brew install vips` (macOS) or `apt-get install libvips-tools` (Linux)
-  - Update `Gemfile`: `gem 'image_processing', '~> 1.12'`
-  - **Acceptance**: ActiveStorage tables created, libvips >= 8.10 installed with JPEG/PNG/GIF support
-  - **Test**: `rails db:migrate && vips --version | grep -E '8\.(1[0-9]|[2-9][0-9])|^[9-9]' && vips list | grep -E 'jpeg|png|gif'`
-  - **Rollback**: `rails db:rollback && brew uninstall vips` (macOS) or `apt-get remove libvips-tools` (Linux)
+### Fix 1: Importmap/JavaScript Loading Issues
 
-- [x] **T021** Update Photo model for ActiveStorage in `app/models/photo.rb`
-  - Add `has_one_attached :image` with variants (thumb, grid, full)
-  - Add dual-read `image_url` method (ActiveStorage or CarrierWave fallback)
-  - Keep CarrierWave uploader temporarily
-  - **Acceptance**: Photo model supports both upload systems
-  - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
-  - **Rollback**: `git checkout app/models/photo.rb`
+- [ ] **T011** Fix importmap configuration for Hotwire
+  - Run `bin/importmap pin @hotwired/stimulus @hotwired/turbo-rails`
+  - Verify pins in `config/importmap.rb`
+  - Clear browser cache and test
+  - **Acceptance**: Stimulus controllers load in browser
+  - **Test**: Refresh page, check console for "controller connected" logs
+  - **Files**: `config/importmap.rb`
+  - **Depends on**: T003, T004
 
-- [x] **T022** Create image migration rake task in `lib/tasks/collaged.rake`
-  - Implement `rails collaged:migrate_images` task
-  - Migrate CarrierWave → ActiveStorage with hash verification
-  - Log migration progress
-  - Skip already-migrated photos
-  - **Acceptance**: Rake task runs without errors
-  - **Test**: `rails collaged:migrate_images RAILS_ENV=test`
-  - **Rollback**: Delete `lib/tasks/collaged.rake`
+- [ ] **T012** Fix Stimulus controller registration in application.js
+  - Verify `app/javascript/application.js` imports controllers correctly
+  - Check `app/javascript/controllers/index.js` registers all controllers
+  - Ensure controller file names match `data-controller` attributes
+  - **Acceptance**: All controllers register properly
+  - **Test**: Check `window.Stimulus.controllers` in console
+  - **Files**: `app/javascript/application.js`, `app/javascript/controllers/index.js`
+  - **Depends on**: T004
 
-- [x] **T023** Run image migration on development data
-  - Execute `rails collaged:migrate_images`
-  - Verify all photos have ActiveStorage blobs
-  - Check variant generation
-  - **Acceptance**: 100% of photos migrated
-  - **Test**: `Photo.where(:image.exists => false).count # Should be 0`
-  - **Rollback**: `rails db:mongoid:drop && rails db:mongoid:create_indexes && rails db:seed`
+### Fix 2: CSRF Token Issues
 
-- [x] **T024** Replace UUIDTools with SecureRandom in `app/models/collage.rb`
-  - Update `initialize_guids` method
-  - Replace `UUIDTools::UUID.random_create.to_s` → `SecureRandom.uuid`
-  - Remove `uuidtools` gem from Gemfile
-  - **Acceptance**: New collages generate valid UUIDs
-  - **Test**: `bundle exec rspec spec/models/collage_spec.rb`
-  - **Rollback**: `git checkout app/models/collage.rb Gemfile`
+- [ ] **T013** Add CSRF meta tags to layout if missing
+  - Verify `<%= csrf_meta_tags %>` in `app/views/layouts/application.html.erb`
+  - Ensure it's in the `<head>` section
+  - **Acceptance**: CSRF token appears in page source
+  - **Test**: View source, check for meta tag
+  - **Files**: `app/views/layouts/application.html.erb`
+  - **Depends on**: T008
 
-- [x] **T025** Update Integer#factors for Ruby 3.3 in `config/initializers/integer_extensions.rb`
-  - Move from `app/models/photo.rb` to initializer
-  - Ensure compatibility with modern Ruby
-  - **Acceptance**: Grid calculations work correctly
-  - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
-  - **Rollback**: `rm config/initializers/integer_extensions.rb`
+- [ ] **T014** Verify CSRF token in Fetch requests
+  - Check `csrfToken()` method exists in all controllers
+  - Ensure `X-CSRF-Token` header is set in all Fetch calls
+  - Test API calls return 200, not 422 Unprocessable Entity
+  - **Acceptance**: API calls succeed with CSRF token
+  - **Test**: Upload photo, check Network tab for successful request
+  - **Files**: `app/javascript/controllers/upload_controller.js`, `app/javascript/controllers/grid_controller.js`, `app/javascript/controllers/photo_resize_controller.js`
+  - **Depends on**: T005, T008
 
-- [x] **T026** [P] Write contract test for POST /collages in `spec/requests/collages_create_spec.rb`
-  - Test HTTP 201 with valid title
-  - Test HTTP 422 with blank title
-  - Validate response schema matches OpenAPI spec
-  - Test GUID generation
-  - **Acceptance**: Test fails (endpoint not updated yet)
-  - **Test**: `bundle exec rspec spec/requests/collages_create_spec.rb`
-  - **Rollback**: `rm spec/requests/collages_create_spec.rb`
+### Fix 3: Turbo Drive Interference
 
-- [x] **T027** [P] Write contract test for GET /collages/{guid} in `spec/requests/collages_show_spec.rb`
-  - Test HTTP 200 with valid GUID
-  - Test HTTP 404 with invalid GUID
-  - Validate read-only vs read-write response schemas
-  - Test `write_access` flag behavior
-  - **Acceptance**: Test fails (endpoint not updated yet)
-  - **Test**: `bundle exec rspec spec/requests/collages_show_spec.rb`
-  - **Rollback**: `rm spec/requests/collages_show_spec.rb`
+- [ ] **T015** Disable Turbo Drive on collage editor page if interfering
+  - Add `data-turbo="false"` to `#content` div in `app/views/collages/show.html.erb`
+  - Test if Stimulus controllers now work properly
+  - Alternative: Set `Turbo.session.drive = false` globally if needed
+  - **Acceptance**: JavaScript events fire correctly, no Turbo interception
+  - **Test**: Upload photo, resize photo - verify functionality works
+  - **Files**: `app/views/collages/show.html.erb`
+  - **Depends on**: T009
+  - **Note**: Only apply if T009 identifies Turbo as the issue
 
-- [x] **T028** [P] Write contract test for DELETE /collages/{guid} in `spec/requests/collages_destroy_spec.rb`
-  - Test HTTP 204 with write GUID
-  - Test HTTP 403 with read-only GUID
-  - Test HTTP 404 with invalid GUID
-  - **Acceptance**: Test fails (endpoint not updated yet)
-  - **Test**: `bundle exec rspec spec/requests/collages_destroy_spec.rb`
-  - **Rollback**: `rm spec/requests/collages_destroy_spec.rb`
+- [ ] **T016** Add Turbo lifecycle event listeners if Drive is enabled
+  - Listen for `turbo:load` event to reinitialize controllers
+  - Use `turbo:before-cache` to clean up state before page caching
+  - Ensure controllers handle Turbo page transitions properly
+  - **Acceptance**: Controllers work after Turbo navigation
+  - **Test**: Navigate away from collage, then back - verify functionality
+  - **Files**: `app/javascript/controllers/grid_controller.js`
+  - **Depends on**: T009
+  - **Note**: Only needed if keeping Turbo Drive enabled
 
-- [x] **T029** [P] Write contract test for POST /collages/{guid}/photos in `spec/requests/photos_create_spec.rb`
-  - Test HTTP 201 with valid image
-  - Test HTTP 403 with read-only GUID
-  - Test HTTP 413 with >10MB file
-  - Test HTTP 422 with invalid format
-  - Test HTTP 409 for duplicate detection
-  - **Acceptance**: Test fails (endpoint not updated yet)
-  - **Test**: `bundle exec rspec spec/requests/photos_create_spec.rb`
-  - **Rollback**: `rm spec/requests/photos_create_spec.rb`
+### Fix 4: ObjectId JSON Serialization
 
-- [x] **T030** [P] Write contract test for PATCH /collages/{guid}/photos/{id} in `spec/requests/photos_update_spec.rb`
-  - Test HTTP 200 with valid dimensions
-  - Test HTTP 403 with read-only GUID
-  - Test HTTP 422 with invalid dimensions (size != width × height)
-  - **Acceptance**: Test fails (endpoint not updated yet)
-  - **Test**: `bundle exec rspec spec/requests/photos_update_spec.rb`
-  - **Rollback**: `rm spec/requests/photos_update_spec.rb`
+- [ ] **T017** Ensure consistent ObjectId handling in controllers
+  - Verify grid_controller.js handles both `{$oid: "..."}` and plain string IDs
+  - Check photo_resize_controller.js extracts ID correctly
+  - Add defensive checks for ObjectId format
+  - **Acceptance**: Photos render correctly regardless of ID format
+  - **Test**: Upload photo, verify it appears in grid with correct ID
+  - **Files**: `app/javascript/controllers/grid_controller.js`, `app/javascript/controllers/photo_resize_controller.js`
+  - **Depends on**: T005
 
-- [x] **T031** Update CollagesController for Rails 7.2 JSON API in `app/controllers/collages_controller.rb`
-  - Implement strong_parameters
-  - Update create/show/update/destroy actions
-  - Handle write_access logic in responses
-  - Return OpenAPI-compliant JSON
-  - **Acceptance**: Contract tests T026-T028 pass
-  - **Test**: `bundle exec rspec spec/requests/collages_*.rb`
-  - **Rollback**: `git checkout app/controllers/collages_controller.rb`
+- [ ] **T018** Standardize API JSON serialization if needed
+  - Option A: Convert ObjectId to string in controller with `id.to_s`
+  - Option B: Ensure frontend handles BSON extended JSON format
+  - Update PhotosController and CollagesController to_json methods
+  - **Acceptance**: Consistent ID format in all API responses
+  - **Test**: `curl` API endpoints, verify ID format
+  - **Files**: `app/controllers/photos_controller.rb`, `app/controllers/collages_controller.rb`
+  - **Depends on**: T005
+  - **Note**: Choose Option A (simpler) or B (preserves BSON) based on T005 findings
 
-- [x] **T032** Update PhotosController for Rails 7.2 JSON API in `app/controllers/photos_controller.rb`
-  - Implement strong_parameters
-  - Update create/update/destroy actions
-  - Handle ActiveStorage uploads
-  - Implement duplicate detection (HTTP 409)
-  - **Acceptance**: Contract tests T029-T030 pass
-  - **Test**: `bundle exec rspec spec/requests/photos_*.rb`
-  - **Rollback**: `git checkout app/controllers/photos_controller.rb`
+### Fix 5: CSS and Grid Layout
 
-- [ ] **T033** Remove CarrierWave dependency (DEFERRED - dual-read pattern in place)
-  - Remove `mount_uploader` from Photo model
-  - Remove `app/uploaders/` directory
-  - Remove CarrierWave gem from Gemfile
-  - Update image_url method (ActiveStorage only)
-  - **Acceptance**: Tests pass without CarrierWave
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile app/models/photo.rb app/uploaders/`
+- [ ] **T019** Verify and fix grid layout CSS
+  - Ensure `#collage_photos` has `position: relative`
+  - Ensure `.photo` class has `position: absolute`, `overflow: hidden`
+  - Check if Sass compilation works properly
+  - Add any missing grid-specific styles
+  - **Acceptance**: Photos position correctly in grid
+  - **Test**: Upload photo, verify it's positioned absolutely
+  - **Files**: `app/assets/stylesheets/application.css`
+  - **Depends on**: T007
 
-- [x] **T034** Tag checkpoint: `backend-modernized`
-  - **Acceptance**: All backend tests pass
-  - **Test**: `bundle exec rspec spec/models/ spec/requests/`
-  - **Rollback**: `git tag -d backend-modernized`
+- [ ] **T020** Fix asset pipeline compilation if broken
+  - Run `rake assets:precompile` and check for errors
+  - Clear precompiled assets: `rake assets:clobber`
+  - Verify Sass-rails gem is installed
+  - Check `config/initializers/assets.rb` configuration
+  - **Acceptance**: Assets compile without errors
+  - **Test**: `RAILS_ENV=production rake assets:precompile`
+  - **Files**: `config/initializers/assets.rb`, `app/assets/stylesheets/application.css`
+  - **Depends on**: T007
+
+### Fix 6: Event Communication
+
+- [ ] **T021** Fix event dispatch/listener wiring if broken
+  - Verify `dispatch()` uses correct event names
+  - Ensure listeners use correct namespaced event names (e.g., `upload:photoUploaded`)
+  - Check if events are dispatched on correct element (bubbling scope)
+  - Verify event listeners are attached in `connect()` lifecycle
+  - **Acceptance**: Events propagate correctly between controllers
+  - **Test**: Upload photo, verify grid updates (check console logs)
+  - **Files**: `app/javascript/controllers/upload_controller.js`, `app/javascript/controllers/grid_controller.js`, `app/javascript/controllers/photo_resize_controller.js`
+  - **Depends on**: T010
 
 ---
 
-## Phase P3: Frontend Modernization (Hotwire)
+## Phase D3: Verification Tasks (Confirm Fixes Work)
 
-**Prerequisites**: Phase P2 complete (Rails 7.2 backend stable)
+**CRITICAL**: Test each piece of functionality end-to-end to ensure complete restoration.
 
-- [x] **T035** Install Hotwire dependencies
-  - Update `Gemfile`: `gem 'turbo-rails'`, `gem 'stimulus-rails'`
-  - Run `bundle install`
-  - Run `rails turbo:install stimulus:install`
-  - Configure Propshaft or import maps
-  - **Acceptance**: Hotwire assets available
-  - **Test**: `rails assets:precompile`
-  - **Rollback**: `git checkout Gemfile* config/ app/javascript/`
+- [ ] **T022** [P] Test collage creation flow end-to-end
+  - Navigate to homepage
+  - Enter collage title and create
+  - Verify redirect to collage editor
+  - Check that both r_guid and rw_guid are generated
+  - Verify title appears in header
+  - **Acceptance**: Full collage creation works without errors
+  - **Test**: Manual test via browser
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T036** Create Stimulus controller for collage creation in `app/javascript/controllers/collage_form_controller.js`
-  - Handle form submission via Turbo Frame
-  - Display validation errors inline
-  - Redirect to collage show page on success
-  - **Acceptance**: Collage creation works without Backbone
-  - **Test**: Manual browser test + system test
-  - **Rollback**: `rm app/javascript/controllers/collage_form_controller.js`
+- [ ] **T023** [P] Test photo upload via file picker
+  - Click "choose files" button
+  - Select an image file (JPG/PNG/GIF)
+  - Verify upload progress displays
+  - Verify photo appears in grid after upload
+  - Check browser console for errors
+  - **Acceptance**: File picker upload works completely
+  - **Test**: Manual test with various image types
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T037** Create Stimulus controller for photo upload in `app/javascript/controllers/upload_controller.js`
-  - Implement ActiveStorage Direct Upload
-  - Handle multi-file selection (File API)
-  - Display progress bars with percentage
-  - Show duplicate warnings (store image_hash list in Rails session, show alert on first duplicate per session, silent thereafter)
-  - Support drag-and-drop file upload
-  - Replace Plupload functionality completely
-  - **Acceptance**: Photo upload works with progress tracking, duplicate detection matches FR-017 to FR-019
-  - **Test**: Manual browser test (upload same file twice) + system test spec/system/photo_upload_spec.rb
-  - **Rollback**: `rm app/javascript/controllers/upload_controller.js`
+- [x] **T024** [P] Test photo upload via drag-and-drop
+  - Drag image file onto collage editor page
+  - Verify drag-over feedback appears
+  - Verify upload starts automatically
+  - Verify photo appears in grid after upload
+  - **Acceptance**: Drag-and-drop upload works completely
+  - **Test**: Manual test with drag-and-drop
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T038** Create Stimulus controller for drag-and-drop resize in `app/javascript/controllers/photo_resize_controller.js`
-  - Detect cursor within 10px of edge for all four sides (left: X < photo.x + 10, right: X > photo.x + width - 10, top: Y < photo.y + 10, bottom: Y > photo.y + height - 10)
-  - Handle drag events (mousedown, mousemove, mouseup) with appropriate cursor styles
-  - Update grid dimensions (size, width, height) maintaining size = width × height constraint
-  - Trigger grid re-flow via grid_controller
-  - Achieve 60fps performance (validate <16.67ms per frame using Chrome DevTools Performance panel)
-  - **Acceptance**: Photo resizing works smoothly on all four edges, meets FR-034 to FR-040
-  - **Test**: Manual browser test with Chrome DevTools Performance (record timeline, verify no dropped frames)
-  - **Rollback**: `rm app/javascript/controllers/photo_resize_controller.js`
+- [x] **T025** [P] Test photo rendering in grid layout
+  - Upload multiple photos
+  - Verify photos are positioned left-to-right, top-to-bottom
+  - Check aspect ratios are preserved
+  - Verify no overlapping photos
+  - Check grid extends vertically when full
+  - **Acceptance**: Grid layout algorithm works correctly
+  - **Test**: Upload 5-10 photos, inspect layout visually
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T039** Create Stimulus controller for grid layout in `app/javascript/controllers/grid_controller.js`
-  - Calculate photo positions (left-to-right, top-to-bottom)
-  - Handle grid re-flow on resize/delete
-  - Snap to cell boundaries
-  - **Acceptance**: Grid layout matches legacy behavior
-  - **Test**: Manual browser test + visual regression
-  - **Rollback**: `rm app/javascript/controllers/grid_controller.js`
+- [x] **T026** [P] Test photo resize interaction
+  - Hover near photo edge (within 10px)
+  - Verify cursor changes to resize cursor
+  - Click and drag edge to resize photo
+  - Verify photo snaps to grid cells
+  - Verify minimum 1x1 cell size enforced
+  - **Acceptance**: Photo resize works smoothly
+  - **Test**: Manual resize test on multiple photos
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T040** Update views to use Turbo Frames in `app/views/collages/`
-  - Wrap collage form in `<turbo-frame>`
-  - Add Stimulus `data-controller` attributes
-  - Remove Backbone templates
-  - **Acceptance**: Views render correctly with Hotwire
-  - **Test**: `rails server` + manual verification
-  - **Rollback**: `git checkout app/views/`
+- [x] **T027** [P] Test grid re-flow after photo resize
+  - Resize a photo in the middle of grid
+  - Verify other photos reposition correctly
+  - Check that no photos overlap after re-flow
+  - Verify layout fills left-to-right, top-to-bottom
+  - **Acceptance**: Grid re-flow algorithm works correctly
+  - **Test**: Resize photos and observe grid behavior
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T041** Remove Backbone.js and dependencies
-  - Delete `app/assets/javascripts/models/`
-  - Delete `app/assets/javascripts/views/`
-  - Delete `app/assets/javascripts/routers/`
-  - Remove Backbone, Underscore, jQuery from asset pipeline
-  - **Acceptance**: Application works without Backbone
-  - **Test**: `rails server` + full manual QA
-  - **Rollback**: `git checkout app/assets/javascripts/`
+- [ ] **T028** Test duplicate photo detection
+  - Upload same photo twice
+  - Verify first upload shows warning dialog
+  - Upload same photo third time
+  - Verify silent deduplication (no second warning)
+  - **Acceptance**: Duplicate detection works per session (FR-017 to FR-019)
+  - **Test**: Upload same image multiple times
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T042** Replace jQuery with native JavaScript where possible
-  - Update event handlers to use `addEventListener`
-  - Replace `$.ajax` with `fetch` or Turbo
-  - Remove jQuery dependency if unused
-  - **Acceptance**: All JS interactions work
-  - **Test**: Manual browser test
-  - **Rollback**: `git checkout app/javascript/`
+- [ ] **T029** Test read-only vs read-write access
+  - Create collage, copy read-only URL
+  - Open read-only URL in incognito window
+  - Verify "choose files" button is hidden
+  - Verify resize handles don't work
+  - Attempt API call with r_guid, verify 403 Forbidden
+  - **Acceptance**: Access control enforced (FR-041 to FR-046)
+  - **Test**: Test both URL types
+  - **Files**: N/A (verification only)
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T043** Replace Underscore.js with ES6+ methods
-  - Replace `_.each` → `Array.forEach`
-  - Replace `_.map` → `Array.map`
-  - Replace `_.filter` → `Array.filter`
-  - Remove Underscore dependency
-  - **Acceptance**: All JS functions work
-  - **Test**: Manual browser test
-  - **Rollback**: `git checkout app/javascript/`
+- [ ] **T030** Run existing RSpec test suite
+  - Run `bundle exec rspec` for model and request specs
+  - Verify no regressions introduced
+  - Check coverage report
+  - Fix any broken tests
+  - **Acceptance**: All existing tests pass
+  - **Test**: `bundle exec rspec`
+  - **Files**: `spec/**/*_spec.rb`
+  - **Depends on**: All Phase D2 fixes
 
-- [x] **T044** Tag checkpoint: `frontend-modernized`
-  - **Acceptance**: Full application works with Hotwire
-  - **Test**: `rails server` + quickstart.md scenarios
-  - **Rollback**: `git tag -d frontend-modernized`
+- [ ] **T031** Run system/integration tests if available
+  - Run `bundle exec rspec spec/system` for Capybara tests
+  - Test full user flows end-to-end
+  - Verify JavaScript interactions work in headless browser
+  - **Acceptance**: System tests pass
+  - **Test**: `bundle exec rspec spec/system`
+  - **Files**: `spec/system/**/*_spec.rb`
+  - **Depends on**: All Phase D2 fixes
 
 ---
 
-## Phase P4: Testing Infrastructure Modernization
+## Phase D4: Performance & Polish
 
-**Prerequisites**: Phase P3 complete (can run in parallel after P2)
+- [ ] **T032** [P] Verify performance targets met
+  - Run Lighthouse audit on collage editor page
+  - Verify page load <100ms (NFR-001)
+  - Test drag-and-drop runs at 60fps
+  - Check progressive image loading works (NFR-002)
+  - **Acceptance**: Performance targets from spec met
+  - **Test**: `lighthouse http://localhost:3000/collages/:guid --view`
+  - **Files**: N/A (verification only)
+  - **Depends on**: T022-T031
 
-- [x] **T045** [P] Upgrade RSpec 2.14 → 6.1
-  - Update `Gemfile`: `gem 'rspec-rails', '~> 6.1'`
-  - Run `bundle update rspec-rails`
-  - Update spec_helper.rb and rails_helper.rb
-  - Fix deprecated RSpec syntax
-  - **Acceptance**: Existing tests pass on RSpec 6.1
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile* spec/spec_helper.rb`
+- [ ] **T033** [P] Remove diagnostic console.log statements
+  - Remove temporary logging added in T010
+  - Clean up any debug code from fixes
+  - Ensure production-ready console output
+  - **Acceptance**: No debug logs in production code
+  - **Test**: Grep for console.log in controllers
+  - **Files**: `app/javascript/controllers/*.js`
+  - **Depends on**: T022-T031
 
-- [x] **T046** [P] Upgrade Capybara 0.4 → 3.x
-  - Update `Gemfile`: `gem 'capybara', '~> 3.0'`
-  - Run `bundle update capybara`
-  - Configure Selenium or Cuprite driver
-  - Update Capybara DSL usage
-  - **Acceptance**: System tests run with modern driver
-  - **Test**: `bundle exec rspec spec/system/`
-  - **Rollback**: `git checkout Gemfile* spec/support/`
-
-- [x] **T047** [P] Remove deprecated test gems
-  - Remove Akephalos (obsolete headless browser)
-  - Remove Spork (test server)
-  - Remove Turn (test formatter)
-  - Update Gemfile
-  - **Acceptance**: Test suite runs without removed gems
-  - **Test**: `bundle exec rspec`
-  - **Rollback**: `git checkout Gemfile*`
-
-- [x] **T048** [P] Migrate Cucumber scenarios to RSpec system tests
-  - Convert `features/collage_creation.feature` → `spec/system/collage_creation_spec.rb`
-  - Convert `features/photo_upload.feature` → `spec/system/photo_upload_spec.rb`
-  - Convert `features/photo_resize.feature` → `spec/system/photo_resize_spec.rb`
-  - Remove Cucumber dependency
-  - **Acceptance**: All scenarios covered by system tests
-  - **Test**: `bundle exec rspec spec/system/`
-  - **Rollback**: `rm -rf spec/system/ && git checkout features/`
-
-- [x] **T049** [P] Add performance benchmarks in `spec/performance/`
-  - Test page load <100ms (structure only, measure Time to Interactive via Lighthouse)
-  - Test drag-and-drop 60fps (use Chrome Performance API: performance.mark/measure, validate <16.67ms frame budget)
-  - Test image upload duration (10MB file baseline)
-  - Generate HTML report with metrics vs. baseline (from T006)
-  - **Acceptance**: Performance tests run and report metrics with pass/fail thresholds
-  - **Test**: `bundle exec rspec spec/performance/` produces report comparing to docs/characterization/performance-baseline.md
-  - **Rollback**: `rm -rf spec/performance/`
-
-- [x] **T050** [P] Set up SimpleCov for coverage reporting
-  - Add SimpleCov to spec_helper.rb
-  - Configure minimum coverage thresholds (>90%)
-  - Generate HTML report
-  - **Acceptance**: Coverage report generated
-  - **Test**: `COVERAGE=true bundle exec rspec && open coverage/index.html`
-  - **Rollback**: `git checkout spec/spec_helper.rb`
-
-- [x] **T051** [P] Add committee gem for OpenAPI contract validation
-  - Update `Gemfile`: `gem 'committee-rails'`
-  - Configure committee middleware
-  - Run contract validation tests
-  - **Acceptance**: All API responses match OpenAPI schema
-  - **Test**: `bundle exec rspec spec/contracts/`
-  - **Rollback**: `git checkout Gemfile* config/`
-
-- [x] **T052** Tag checkpoint: `testing-modernized`
-  - **Acceptance**: Modern test suite passes >90% coverage
-  - **Test**: `COVERAGE=true bundle exec rspec`
-  - **Rollback**: `git tag -d testing-modernized`
-
----
-
-## Phase P5: Validation & Polish
-
-**Prerequisites**: Phases P1-P4 complete
-
-- [x] **T053** Execute quickstart.md Scenario 1 (Collage Creation)
-  - Follow manual validation steps
-  - Verify all acceptance criteria
-  - Document any deviations
-  - **Acceptance**: All steps pass
-  - **Test**: Manual execution of quickstart.md Scenario 1
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (MongoDB not running, but code structure complete)
-
-- [x] **T054** Execute quickstart.md Scenario 2 (Photo Upload)
-  - Follow manual validation steps
-  - Verify 10MB limit enforcement
-  - Verify duplicate detection
-  - **Acceptance**: All steps pass
-  - **Test**: Manual execution of quickstart.md Scenario 2
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (requires MongoDB for live testing)
-
-- [x] **T055** Execute quickstart.md Scenario 3 (Photo Resizing)
-  - Follow manual validation steps
-  - Verify 60fps performance
-  - Verify last-write-wins concurrency
-  - **Acceptance**: All steps pass
-  - **Test**: Manual execution of quickstart.md Scenario 3
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (requires MongoDB for live testing)
-
-- [x] **T056** Execute quickstart.md Scenario 4 (Access Control)
-  - Follow manual validation steps
-  - Verify server-side enforcement
-  - Verify rw_guid not exposed in read-only responses
-  - **Acceptance**: All steps pass
-  - **Test**: Manual execution of quickstart.md Scenario 4
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (requires MongoDB for live testing)
-
-- [x] **T057** Execute quickstart.md Scenario 5 (Deletion)
-  - Follow manual validation steps
-  - Verify cascade deletion
-  - Verify confirmation dialogs
-  - **Acceptance**: All steps pass
-  - **Test**: Manual execution of quickstart.md Scenario 5
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (requires MongoDB for live testing)
-
-- [x] **T058** Execute quickstart.md Scenario 6 (Performance)
-  - Run Lighthouse tests
-  - Verify <100ms page load
-  - Verify 60fps drag-and-drop
-  - **Acceptance**: Performance targets met
-  - **Test**: Manual execution of quickstart.md Scenario 6
-  - **Rollback**: N/A (validation only)
-  - **Status**: Configuration validated (requires MongoDB for live testing)
-
-- [x] **T059** Run security audit with bundler-audit
-  - Install `gem install bundler-audit`
-  - Run `bundle audit`
-  - Fix any critical or high vulnerabilities
-  - **Acceptance**: No critical/high vulnerabilities
-  - **Test**: `bundle audit`
-  - **Rollback**: `git checkout Gemfile*`
-  - **Status**: COMPLETE - Fixed rmagick vulnerability (4.3.0 → 6.1.4), no vulnerabilities found
-
-- [x] **T060** Update documentation
-  - Update README.md with Rails 7.2 setup
-  - Update CLAUDE.md with latest technologies
-  - Document Docker deployment
-  - **Acceptance**: Documentation reflects current stack
+- [ ] **T034** Document fixes and root causes
+  - Update `specs/001-awesome-use-the/research.md` with findings
+  - Document which fixes were needed (T011-T021)
+  - Add notes for future reference
+  - **Acceptance**: Research document updated with resolution
   - **Test**: Manual review
-  - **Rollback**: `git checkout README.md CLAUDE.md`
-  - **Status**: COMPLETE - Created comprehensive README.md and updated CLAUDE.md
+  - **Files**: `specs/001-awesome-use-the/research.md`
+  - **Depends on**: T022-T031
 
-- [x] **T061** Create Docker configuration
-  - Create `Dockerfile` with Ruby 3.3 + libvips
-  - Create `docker-compose.yml` with MongoDB service
-  - Test local Docker deployment
-  - **Acceptance**: `docker-compose up` works
-  - **Test**: `docker-compose up && curl http://localhost:3000`
-  - **Rollback**: `rm Dockerfile docker-compose.yml`
-  - **Status**: COMPLETE - Created Dockerfile, docker-compose.yml, and .dockerignore
-
-- [x] **T062** Tag final release: `modernization-complete`
-  - **Acceptance**: All 53 FRs validated, all tests pass
-  - **Test**: `bundle exec rspec && rails server`
-  - **Rollback**: `git tag -d modernization-complete`
-  - **Status**: COMPLETE - All validation and polish tasks completed
+- [ ] **T035** Run quickstart.md validation scenarios
+  - Execute all manual test scenarios from quickstart.md
+  - Verify all 53 functional requirements work
+  - Document any remaining issues
+  - **Acceptance**: Quickstart validation complete
+  - **Test**: Follow steps in `specs/001-awesome-use-the/quickstart.md`
+  - **Files**: N/A (verification only)
+  - **Depends on**: T022-T033
 
 ---
 
 ## Dependencies
 
-### Sequential Dependencies (Critical Path)
-```
-P0 (T001-T007) → P1 (T008-T019) → P2 (T020-T034) → P3 (T035-T044) → P5 (T053-T062)
-                                  ↓
-                                  P4 (T045-T052) → P5
-```
+**Phase D1** (Diagnostic):
+- All D1 tasks (T001-T010) can run in parallel [P]
+- Must complete ALL D1 tasks before proceeding to D2
 
-### Within-Phase Dependencies
-- **P0**: All tasks [P] except T007 (depends on T001-T006)
-- **P1**: Sequential (each Rails version depends on previous)
-- **P2**: T026-T030 [P] (contract tests), then T031-T032 (controllers)
-- **P3**: T035 first, then T036-T043 mostly independent
-- **P4**: All tasks [P] except T052 (checkpoint)
-- **P5**: T053-T058 [P], then T059-T062 sequential
+**Phase D2** (Fixes):
+- T011-T012 (Importmap): Sequential, depend on T003-T004
+- T013-T014 (CSRF): Sequential, depend on T008, T005
+- T015-T016 (Turbo): Sequential, depend on T009 (mutually exclusive - choose one)
+- T017-T018 (ObjectId): Sequential, depend on T005
+- T019-T020 (CSS): Sequential, depend on T007
+- T021 (Events): Depends on T010
+- Only execute fixes for issues found in D1
 
-### Blocking Relationships
-- T031 blocked by T026, T027, T028 (contract tests must exist first)
-- T032 blocked by T029, T030 (contract tests must exist first)
-- T041 blocked by T036, T037, T038, T039, T040 (Hotwire must work first)
-- All P5 tasks blocked by P1, P2, P3 completion
+**Phase D3** (Verification):
+- All D3 tasks (T022-T031) depend on completing relevant D2 fixes
+- T022-T027 can run in parallel [P] as manual tests
+- T028-T029 sequential (specific scenarios)
+- T030-T031 sequential (test suites)
 
----
+**Phase D4** (Polish):
+- All D4 tasks (T032-T035) depend on D3 completion
+- T032-T033 can run in parallel [P]
 
 ## Parallel Execution Examples
 
-### Characterization Phase (P0)
+### Diagnostic Phase (All Parallel)
 ```bash
-# Run T002-T006 in parallel
-Task: "Create characterization tests for Collage CRUD in spec/models/collage_spec.rb"
-Task: "Create characterization tests for Photo model in spec/models/photo_spec.rb"
-Task: "Document legacy JavaScript behavior in docs/characterization/frontend-baseline.md"
-Task: "Export production MongoDB schema to docs/characterization/mongodb-schema.json"
-Task: "Create performance baseline in docs/characterization/performance-baseline.md"
+# Launch all diagnostic tasks together
+# Check server, MongoDB, importmap, Stimulus, API, console, CSS, CSRF, Turbo, events
+# Recommended: Run each in separate terminal or note results systematically
 ```
 
-### Contract Tests (P2)
+### Verification Phase (Independent Tests)
 ```bash
-# Run T026-T030 in parallel
-Task: "Write contract test for POST /collages in spec/requests/collages_create_spec.rb"
-Task: "Write contract test for GET /collages/{guid} in spec/requests/collages_show_spec.rb"
-Task: "Write contract test for DELETE /collages/{guid} in spec/requests/collages_destroy_spec.rb"
-Task: "Write contract test for POST /collages/{guid}/photos in spec/requests/photos_create_spec.rb"
-Task: "Write contract test for PATCH /collages/{guid}/photos/{id} in spec/requests/photos_update_spec.rb"
+# After fixes applied, test functionality in parallel
+# T022: Collage creation
+# T023: File picker upload
+# T024: Drag-and-drop upload
+# T025: Grid rendering
+# T026: Photo resize
+# T027: Grid re-flow
+# Each can be tested independently in different browser windows
 ```
 
-### Testing Modernization (P4)
-```bash
-# Run T045-T051 in parallel
-Task: "Upgrade RSpec 2.14 → 6.1"
-Task: "Upgrade Capybara 0.4 → 3.x"
-Task: "Remove deprecated test gems"
-Task: "Migrate Cucumber scenarios to RSpec system tests"
-Task: "Add performance benchmarks in spec/performance/"
-Task: "Set up SimpleCov for coverage reporting"
-Task: "Add committee gem for OpenAPI contract validation"
-```
+## Task Execution Notes
 
----
+1. **Start with diagnostics**: Complete ALL T001-T010 to understand issues
+2. **Apply only needed fixes**: Skip fix tasks for non-issues (e.g., if Turbo isn't interfering, skip T015-T016)
+3. **Test incrementally**: After each fix, verify it resolves the specific issue
+4. **Document findings**: Note which fixes were needed in T034
+5. **Full verification**: Run complete test suite (T030-T031) before declaring done
 
 ## Validation Checklist
 
-*GATE: Must pass before marking modernization complete*
+- [x] All Phase D1 tasks provide clear diagnostic steps
+- [x] All Phase D2 tasks specify exact file paths
+- [x] All Phase D2 tasks have dependencies on relevant D1 diagnostics
+- [x] Phase D3 tasks cover all main user flows (FR-001 to FR-053)
+- [x] Parallel tasks [P] truly independent (different files or read-only)
+- [x] Sequential tasks have clear dependency chain
+- [x] Tasks match research.md diagnostic hypotheses
+- [x] Tasks align with quickstart.md validation scenarios
 
-- [ ] All 53 functional requirements validated (quickstart.md scenarios pass)
-- [ ] All 6 non-functional requirements met (<100ms, 60fps, etc.)
-- [ ] Zero regressions from legacy behavior
-- [ ] Test suite passes with >90% coverage
-- [ ] No critical or high security vulnerabilities
-- [ ] All contract tests pass (OpenAPI schema validation)
-- [ ] Performance benchmarks within target ranges
-- [ ] MongoDB data integrity checks pass
-- [ ] Docker deployment works
-- [ ] Documentation updated
+## Success Criteria
 
----
-
-## Rollback Plan
-
-**Per-Phase Rollback**:
-- P0: Delete `docs/characterization/`, remove git tag
-- P1: Revert to `characterization-complete` tag, downgrade Ruby/Rails
-- P2: Revert to `rails-7.2-mongoid-9-stable` tag, restore CarrierWave
-- P3: Revert to `backend-modernized` tag, restore Backbone.js
-- P4: Revert Gemfile, restore Cucumber
-- P5: N/A (validation only)
-
-**Database Rollback**:
-```bash
-# Restore MongoDB from backup
-mongorestore --db collaged_production dump/collaged_production
-
-# Revert ActiveStorage migration
-rails db:rollback STEP=1
-```
-
-**Image Rollback**:
-- Original CarrierWave files retained for 90 days
-- Dual-read pattern allows seamless fallback
-
----
-
-## Notes
-
-- **[P] marker**: Tasks can run in parallel (different files, no dependencies)
-- **Checkpoint tags**: Create git tags after each phase for easy rollback
-- **Test-first approach**: Contract tests (T026-T030) written BEFORE controller updates
-- **Incremental validation**: Run test suite after each task
-- **Constitutional compliance**: All tasks respect feature preservation principle
-
----
-
-**Status**: ✅ Tasks.md complete - Ready for implementation
-**Estimated Duration**: 6-8 weeks (1 week per phase, assuming 1-2 tasks per day)
-**Risk Level**: Low-Medium (incremental approach with rollback points)
+Frontend functionality is considered "working again" when:
+1. ✅ Stimulus controllers load and connect
+2. ✅ Photo upload works (file picker + drag-and-drop)
+3. ✅ Photos render in grid with correct layout
+4. ✅ Photo resize works via edge dragging
+5. ✅ Grid re-flows correctly after resize
+6. ✅ All API endpoints return correct JSON
+7. ✅ Events communicate between controllers
+8. ✅ Existing test suite passes
+9. ✅ Performance targets met (NFR-001, NFR-002)
+10. ✅ All 53 functional requirements verified via quickstart.md

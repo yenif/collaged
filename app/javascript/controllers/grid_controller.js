@@ -55,7 +55,12 @@ export default class extends Controller {
     const { photoId, width, height, size, customAspect } = event.detail
 
     // Find and update the photo
-    const photo = this.photos.find(p => p.id === photoId)
+    // Handle MongoDB ObjectId format
+    const photo = this.photos.find(p => {
+      const pId = typeof p.id === 'object' && p.id.$oid ? p.id.$oid : p.id
+      return pId === photoId
+    })
+
     if (photo) {
       photo.width = width
       photo.height = height
@@ -64,6 +69,9 @@ export default class extends Controller {
 
       // Re-render entire grid
       this.render()
+
+      // Persist changes to server
+      this.updatePhotoOnServer(photoId, { width, height, size, custom_aspect: customAspect })
     }
   }
 
@@ -194,7 +202,9 @@ export default class extends Controller {
 
     // Add photo-resize controller
     div.dataset.controller = 'photo-resize'
-    div.dataset.photoResizePhotoIdValue = photo.id
+    // Handle MongoDB ObjectId format {$oid: "..."} or plain string
+    const photoId = typeof photo.id === 'object' && photo.id.$oid ? photo.id.$oid : photo.id
+    div.dataset.photoResizePhotoIdValue = photoId
     div.dataset.photoResizeCollageIdValue = this.collageIdValue
     div.dataset.photoResizeImageWidthValue = photo.image_width
     div.dataset.photoResizeImageHeightValue = photo.image_height
@@ -237,6 +247,26 @@ export default class extends Controller {
     div.appendChild(img)
 
     return div
+  }
+
+  async updatePhotoOnServer(photoId, attrs) {
+    try {
+      const response = await fetch(`/collages/${this.collageIdValue}/photos/${photoId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': this.csrfToken()
+        },
+        body: JSON.stringify({ photo: attrs })
+      })
+
+      if (!response.ok) {
+        console.error('Failed to update photo on server')
+      }
+    } catch (error) {
+      console.error('Error updating photo:', error)
+    }
   }
 
   csrfToken() {

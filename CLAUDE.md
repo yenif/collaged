@@ -3,6 +3,8 @@
 Rails 7.2 photo collage application with MongoDB. Last updated: 2025-09-30
 
 ## Active Technologies
+- Ruby 3.3.0, JavaScript (ES6+) + Rails 7.2.2, Hotwire (Turbo 8.x, Stimulus 3.x), Mongoid 9.0.x, RMagick 6.x, CarrierWave (001-awesome-use-the)
+- MongoDB (collages, photos), SQLite3 (ActiveStorage blobs), File system (image uploads via CarrierWave) (001-awesome-use-the)
 
 **Backend:**
 - Ruby 3.3.0 (managed with mise)
@@ -98,6 +100,7 @@ mongosh collaged_development      # MongoDB shell
 - Maintain >90% code coverage
 
 ## Recent Changes
+- 001-awesome-use-the: Added Ruby 3.3.0, JavaScript (ES6+) + Rails 7.2.2, Hotwire (Turbo 8.x, Stimulus 3.x), Mongoid 9.0.x, RMagick 6.x, CarrierWave
 - **2025-09-30**: Completed Rails 7.2 modernization
   - Upgraded from Rails 3.2.14 to 7.2.2
   - Ruby 1.9.2 → 3.3.0
