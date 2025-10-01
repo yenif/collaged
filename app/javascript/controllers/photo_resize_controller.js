@@ -30,11 +30,11 @@ export default class extends Controller {
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
 
-    // Edge detection: 10px threshold on all four sides
-    const resizeLeft = x < 10
-    const resizeRight = x > rect.width - 10
-    const resizeTop = y < 10
-    const resizeBottom = y > rect.height - 10
+    // Edge detection: 20px threshold on all four sides (doubled for easier interaction)
+    const resizeLeft = x < 20
+    const resizeRight = x > rect.width - 20
+    const resizeTop = y < 20
+    const resizeBottom = y > rect.height - 20
 
     // Determine if this is a resize or move operation
     if (resizeLeft || resizeRight || resizeTop || resizeBottom) {
@@ -67,12 +67,13 @@ export default class extends Controller {
 
     event.preventDefault()
 
-    // Use requestAnimationFrame for 60fps performance
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId)
-    }
+    // Throttle updates using requestAnimationFrame for smooth 60fps performance
+    // But don't cancel pending frames - let them complete
+    if (this.rafPending) return
 
-    this.rafId = requestAnimationFrame(() => {
+    this.rafPending = true
+
+    requestAnimationFrame(() => {
       const rect = this.element.getBoundingClientRect()
 
       // Start with current dimensions
@@ -111,7 +112,7 @@ export default class extends Controller {
         })
       }
 
-      this.rafId = null
+      this.rafPending = false
     })
   }
 
@@ -126,11 +127,8 @@ export default class extends Controller {
       document.removeEventListener('mouseup', this.boundEndSpatialEdit)
     }
 
-    // Cancel any pending animation frame
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
-    }
+    // Reset animation frame flag
+    this.rafPending = false
 
     // Reset cursor
     this.element.style.cursor = ''
@@ -200,8 +198,6 @@ export default class extends Controller {
     if (this.boundEndSpatialEdit) {
       document.removeEventListener('mouseup', this.boundEndSpatialEdit)
     }
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId)
-    }
+    this.rafPending = false
   }
 }
