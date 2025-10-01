@@ -33,14 +33,15 @@ group :yenif, :development, :test, :cucumber do
   gem 'listen', '~> 3.0'
   gem 'byebug'
   gem 'test-unit', '~> 3.0'
-  gem 'turn', :require => false
   gem 'factory_bot_rails'
   gem 'capybara', '~> 3.0'
+  gem 'selenium-webdriver'
   gem 'cucumber-rails', :require => false
   gem "json_spec", :require => false
-  gem 'spork'
   gem 'launchy'
-  gem 'rspec-rails', '~> 3.9'
+  gem 'rspec-rails', '~> 6.1'
   gem 'mongoid-rspec'
   gem 'database_cleaner'
+  gem 'simplecov', require: false
+  gem 'committee-rails'
 end

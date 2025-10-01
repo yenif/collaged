@@ -421,7 +421,7 @@ Rails monolith structure at repository root:
 
 **Prerequisites**: Phase P3 complete (can run in parallel after P2)
 
-- [ ] **T045** [P] Upgrade RSpec 2.14 → 6.1
+- [x] **T045** [P] Upgrade RSpec 2.14 → 6.1
   - Update `Gemfile`: `gem 'rspec-rails', '~> 6.1'`
   - Run `bundle update rspec-rails`
   - Update spec_helper.rb and rails_helper.rb
@@ -430,7 +430,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile* spec/spec_helper.rb`
 
-- [ ] **T046** [P] Upgrade Capybara 0.4 → 3.x
+- [x] **T046** [P] Upgrade Capybara 0.4 → 3.x
   - Update `Gemfile`: `gem 'capybara', '~> 3.0'`
   - Run `bundle update capybara`
   - Configure Selenium or Cuprite driver
@@ -439,7 +439,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/system/`
   - **Rollback**: `git checkout Gemfile* spec/support/`
 
-- [ ] **T047** [P] Remove deprecated test gems
+- [x] **T047** [P] Remove deprecated test gems
   - Remove Akephalos (obsolete headless browser)
   - Remove Spork (test server)
   - Remove Turn (test formatter)
@@ -448,7 +448,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile*`
 
-- [ ] **T048** [P] Migrate Cucumber scenarios to RSpec system tests
+- [x] **T048** [P] Migrate Cucumber scenarios to RSpec system tests
   - Convert `features/collage_creation.feature` → `spec/system/collage_creation_spec.rb`
   - Convert `features/photo_upload.feature` → `spec/system/photo_upload_spec.rb`
   - Convert `features/photo_resize.feature` → `spec/system/photo_resize_spec.rb`
@@ -457,7 +457,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/system/`
   - **Rollback**: `rm -rf spec/system/ && git checkout features/`
 
-- [ ] **T049** [P] Add performance benchmarks in `spec/performance/`
+- [x] **T049** [P] Add performance benchmarks in `spec/performance/`
   - Test page load <100ms (structure only, measure Time to Interactive via Lighthouse)
   - Test drag-and-drop 60fps (use Chrome Performance API: performance.mark/measure, validate <16.67ms frame budget)
   - Test image upload duration (10MB file baseline)
@@ -466,7 +466,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/performance/` produces report comparing to docs/characterization/performance-baseline.md
   - **Rollback**: `rm -rf spec/performance/`
 
-- [ ] **T050** [P] Set up SimpleCov for coverage reporting
+- [x] **T050** [P] Set up SimpleCov for coverage reporting
   - Add SimpleCov to spec_helper.rb
   - Configure minimum coverage thresholds (>90%)
   - Generate HTML report
@@ -474,7 +474,7 @@ Rails monolith structure at repository root:
   - **Test**: `COVERAGE=true bundle exec rspec && open coverage/index.html`
   - **Rollback**: `git checkout spec/spec_helper.rb`
 
-- [ ] **T051** [P] Add committee gem for OpenAPI contract validation
+- [x] **T051** [P] Add committee gem for OpenAPI contract validation
   - Update `Gemfile`: `gem 'committee-rails'`
   - Configure committee middleware
   - Run contract validation tests
@@ -482,7 +482,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/contracts/`
   - **Rollback**: `git checkout Gemfile* config/`
 
-- [ ] **T052** Tag checkpoint: `testing-modernized`
+- [x] **T052** Tag checkpoint: `testing-modernized`
   - **Acceptance**: Modern test suite passes >90% coverage
   - **Test**: `COVERAGE=true bundle exec rspec`
   - **Rollback**: `git tag -d testing-modernized`

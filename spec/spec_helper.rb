@@ -1,4 +1,18 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
+
+# SimpleCov coverage reporting
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.start 'rails' do
+    add_filter '/spec/'
+    add_filter '/config/'
+    add_filter '/vendor/'
+
+    minimum_coverage 90
+    minimum_coverage_by_file 80
+  end
+end
+
 ENV["RAILS_ENV"] = 'test'
 require File.expand_path("../../config/environment", __FILE__)
 require 'rspec/rails'
@@ -17,13 +31,8 @@ RSpec.configure do |config|
   # config.mock_with :rr
   config.mock_with :rspec
 
-  require 'database_cleaner'
-  config.before(:suite) do
-    DatabaseCleaner.strategy = :truncation
-    DatabaseCleaner.orm = "mongoid"
-  end
-
+  # Mongoid test database cleanup
   config.before(:each) do
-    DatabaseCleaner.clean
+    Mongoid.purge!
   end
 end
