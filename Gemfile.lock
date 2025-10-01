@@ -220,11 +220,10 @@ GEM
     mongo (2.21.3)
       base64
       bson (>= 4.14.1, < 6.0.0)
-    mongoid (8.1.11)
+    mongoid (9.0.8)
       activemodel (>= 5.1, < 8.1, != 7.0.0)
       concurrent-ruby (>= 1.0.5, < 2.0)
       mongo (>= 2.18.0, < 3.0.0)
-      ruby2_keywords (~> 0.0.5)
     mongoid-compatibility (1.0.0)
       activesupport
       mongoid (>= 2.0)
@@ -341,7 +340,6 @@ GEM
     ruby-vips (2.2.5)
       ffi (~> 1.12)
       logger
-    ruby2_keywords (0.0.5)
     sass (3.7.4)
       sass-listen (~> 4.0.0)
     sass-listen (4.0.0)
@@ -410,7 +408,7 @@ DEPENDENCIES
   listen (~> 3.0)
   mini_racer
   mongo (~> 2.13)
-  mongoid (~> 8.1)
+  mongoid (~> 9.0)
   mongoid-rspec
   rails (~> 7.2)
   rails_best_practices

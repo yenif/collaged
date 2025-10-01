@@ -8,7 +8,7 @@ gem "rails_best_practices"
 gem 'mongo', '~> 2.13'
 gem 'bson', '~> 4.0'
 gem 'mini_racer'
-gem 'mongoid', '~> 8.1'
+gem 'mongoid', '~> 9.0'
 gem 'uuidtools'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'rmagick', '~> 4.0'

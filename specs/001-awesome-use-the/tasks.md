@@ -154,7 +154,7 @@ Rails monolith structure at repository root:
   - **Test**: `git tag -l | grep rails-6.1`
   - **Rollback**: `git tag -d rails-6.1-stable`
 
-- [ ] **T015** Upgrade Rails 6.1 → 7.2.x
+- [x] **T015** Upgrade Rails 6.1 → 7.2.x
   - Update `Gemfile`: `gem 'rails', '~> 7.2'`
   - Run `rails app:update`
   - Migrate Webpacker → Propshaft/import maps
@@ -163,7 +163,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile* config/`
 
-- [ ] **T016** Upgrade Ruby 2.7 → 3.3.x
+- [x] **T016** Upgrade Ruby 2.7 → 3.3.x
   - Update `.ruby-version` to `3.3.0`
   - Update Gemfile `ruby` directive
   - Fix Ruby 3.x keyword argument warnings
