@@ -140,7 +140,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile* config/`
 
-- [ ] **T013** Upgrade Rails 5.2 → 6.1.7.6
+- [x] **T013** Upgrade Rails 5.2 → 6.1.7.6
   - Update `Gemfile`: `gem 'rails', '~> 6.1.7'`
   - Run `rails app:update`
   - Add Zeitwerk autoloading
@@ -149,7 +149,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile* config/`
 
-- [ ] **T014** Tag checkpoint: `rails-6.1-stable`
+- [x] **T014** Tag checkpoint: `rails-6.1-stable`
   - **Acceptance**: Tag created, tests passing
   - **Test**: `git tag -l | grep rails-6.1`
   - **Rollback**: `git tag -d rails-6.1-stable`
