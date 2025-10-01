@@ -31,7 +31,7 @@ Rails monolith structure at repository root:
 
 **CRITICAL**: These tasks must complete FIRST to establish behavioral baseline.
 
-- [ ] **T001** Document current test suite status in `docs/characterization/test-baseline.md`
+- [x] **T001** Document current test suite status in `docs/characterization/test-baseline.md`
   - Run existing RSpec + Cucumber tests
   - Document passing, failing, and skipped tests
   - Create coverage report (SimpleCov)
@@ -39,7 +39,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec && bundle exec cucumber`
   - **Rollback**: Delete docs/characterization/ directory
 
-- [ ] **T002** [P] Create characterization tests for Collage CRUD in `spec/models/collage_spec.rb`
+- [x] **T002** [P] Create characterization tests for Collage CRUD in `spec/models/collage_spec.rb`
   - Test current GUID generation behavior (UUIDTools)
   - Test find_by_guid with r_guid and rw_guid
   - Test write_access flag behavior
@@ -48,7 +48,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/models/collage_spec.rb`
   - **Rollback**: `git checkout spec/models/collage_spec.rb`
 
-- [ ] **T003** [P] Create characterization tests for Photo model in `spec/models/photo_spec.rb`
+- [x] **T003** [P] Create characterization tests for Photo model in `spec/models/photo_spec.rb`
   - Test grid dimension calculation (prime factorization)
   - Test aspect ratio preservation
   - Test image_hash generation (SHA1)
@@ -58,7 +58,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
   - **Rollback**: `git checkout spec/models/photo_spec.rb`
 
-- [ ] **T004** [P] Document legacy JavaScript behavior in `docs/characterization/frontend-baseline.md`
+- [x] **T004** [P] Document legacy JavaScript behavior in `docs/characterization/frontend-baseline.md`
   - Backbone.js routes and models
   - jQuery event handlers
   - Plupload upload flow (document runtime selection: HTML5 vs Flash/Silverlight fallbacks if present)
@@ -69,7 +69,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual review + inspect Plupload initialization code
   - **Rollback**: Delete docs/characterization/frontend-baseline.md
 
-- [ ] **T005** [P] Export production MongoDB schema to `docs/characterization/mongodb-schema.json`
+- [x] **T005** [P] Export production MongoDB schema to `docs/characterization/mongodb-schema.json`
   - Run `mongodump --db collaged_production`
   - Document indexes, field types, sample data
   - Verify no orphaned data
@@ -77,7 +77,7 @@ Rails monolith structure at repository root:
   - **Test**: `mongo collaged_development --eval 'db.collages.findOne()'`
   - **Rollback**: No rollback needed (read-only)
 
-- [ ] **T006** [P] Create performance baseline in `docs/characterization/performance-baseline.md`
+- [x] **T006** [P] Create performance baseline in `docs/characterization/performance-baseline.md`
   - Measure page load times (Lighthouse)
   - Measure drag-and-drop FPS
   - Measure image upload duration
@@ -86,7 +86,7 @@ Rails monolith structure at repository root:
   - **Test**: `lighthouse http://localhost:3000/collages/[GUID]`
   - **Rollback**: Delete docs/characterization/performance-baseline.md
 
-- [ ] **T007** Tag repository checkpoint
+- [x] **T007** Tag repository checkpoint
   - Create git tag: `characterization-complete`
   - **Acceptance**: Tag created, all P0 tasks complete
   - **Test**: `git tag -l | grep characterization-complete`
