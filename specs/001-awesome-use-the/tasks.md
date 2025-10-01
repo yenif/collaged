@@ -199,7 +199,7 @@ Rails monolith structure at repository root:
 
 **Prerequisites**: Phase P1 complete (Rails 7.2 + Mongoid 9.x)
 
-- [ ] **T020** Install ActiveStorage and libvips
+- [x] **T020** Install ActiveStorage and libvips
   - Run `rails active_storage:install`
   - Run migrations
   - Install libvips: `brew install vips` (macOS) or `apt-get install libvips-tools` (Linux)
@@ -208,7 +208,7 @@ Rails monolith structure at repository root:
   - **Test**: `rails db:migrate && vips --version | grep -E '8\.(1[0-9]|[2-9][0-9])|^[9-9]' && vips list | grep -E 'jpeg|png|gif'`
   - **Rollback**: `rails db:rollback && brew uninstall vips` (macOS) or `apt-get remove libvips-tools` (Linux)
 
-- [ ] **T021** Update Photo model for ActiveStorage in `app/models/photo.rb`
+- [x] **T021** Update Photo model for ActiveStorage in `app/models/photo.rb`
   - Add `has_one_attached :image` with variants (thumb, grid, full)
   - Add dual-read `image_url` method (ActiveStorage or CarrierWave fallback)
   - Keep CarrierWave uploader temporarily
@@ -216,7 +216,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
   - **Rollback**: `git checkout app/models/photo.rb`
 
-- [ ] **T022** Create image migration rake task in `lib/tasks/collaged.rake`
+- [x] **T022** Create image migration rake task in `lib/tasks/collaged.rake`
   - Implement `rails collaged:migrate_images` task
   - Migrate CarrierWave → ActiveStorage with hash verification
   - Log migration progress
@@ -225,7 +225,7 @@ Rails monolith structure at repository root:
   - **Test**: `rails collaged:migrate_images RAILS_ENV=test`
   - **Rollback**: Delete `lib/tasks/collaged.rake`
 
-- [ ] **T023** Run image migration on development data
+- [x] **T023** Run image migration on development data
   - Execute `rails collaged:migrate_images`
   - Verify all photos have ActiveStorage blobs
   - Check variant generation
@@ -233,7 +233,7 @@ Rails monolith structure at repository root:
   - **Test**: `Photo.where(:image.exists => false).count # Should be 0`
   - **Rollback**: `rails db:mongoid:drop && rails db:mongoid:create_indexes && rails db:seed`
 
-- [ ] **T024** Replace UUIDTools with SecureRandom in `app/models/collage.rb`
+- [x] **T024** Replace UUIDTools with SecureRandom in `app/models/collage.rb`
   - Update `initialize_guids` method
   - Replace `UUIDTools::UUID.random_create.to_s` → `SecureRandom.uuid`
   - Remove `uuidtools` gem from Gemfile
@@ -241,14 +241,14 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/models/collage_spec.rb`
   - **Rollback**: `git checkout app/models/collage.rb Gemfile`
 
-- [ ] **T025** Update Integer#factors for Ruby 3.3 in `config/initializers/integer_extensions.rb`
+- [x] **T025** Update Integer#factors for Ruby 3.3 in `config/initializers/integer_extensions.rb`
   - Move from `app/models/photo.rb` to initializer
   - Ensure compatibility with modern Ruby
   - **Acceptance**: Grid calculations work correctly
   - **Test**: `bundle exec rspec spec/models/photo_spec.rb`
   - **Rollback**: `rm config/initializers/integer_extensions.rb`
 
-- [ ] **T026** [P] Write contract test for POST /collages in `spec/requests/collages_create_spec.rb`
+- [x] **T026** [P] Write contract test for POST /collages in `spec/requests/collages_create_spec.rb`
   - Test HTTP 201 with valid title
   - Test HTTP 422 with blank title
   - Validate response schema matches OpenAPI spec
@@ -257,7 +257,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/collages_create_spec.rb`
   - **Rollback**: `rm spec/requests/collages_create_spec.rb`
 
-- [ ] **T027** [P] Write contract test for GET /collages/{guid} in `spec/requests/collages_show_spec.rb`
+- [x] **T027** [P] Write contract test for GET /collages/{guid} in `spec/requests/collages_show_spec.rb`
   - Test HTTP 200 with valid GUID
   - Test HTTP 404 with invalid GUID
   - Validate read-only vs read-write response schemas
@@ -266,7 +266,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/collages_show_spec.rb`
   - **Rollback**: `rm spec/requests/collages_show_spec.rb`
 
-- [ ] **T028** [P] Write contract test for DELETE /collages/{guid} in `spec/requests/collages_destroy_spec.rb`
+- [x] **T028** [P] Write contract test for DELETE /collages/{guid} in `spec/requests/collages_destroy_spec.rb`
   - Test HTTP 204 with write GUID
   - Test HTTP 403 with read-only GUID
   - Test HTTP 404 with invalid GUID
@@ -274,7 +274,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/collages_destroy_spec.rb`
   - **Rollback**: `rm spec/requests/collages_destroy_spec.rb`
 
-- [ ] **T029** [P] Write contract test for POST /collages/{guid}/photos in `spec/requests/photos_create_spec.rb`
+- [x] **T029** [P] Write contract test for POST /collages/{guid}/photos in `spec/requests/photos_create_spec.rb`
   - Test HTTP 201 with valid image
   - Test HTTP 403 with read-only GUID
   - Test HTTP 413 with >10MB file
@@ -284,7 +284,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/photos_create_spec.rb`
   - **Rollback**: `rm spec/requests/photos_create_spec.rb`
 
-- [ ] **T030** [P] Write contract test for PATCH /collages/{guid}/photos/{id} in `spec/requests/photos_update_spec.rb`
+- [x] **T030** [P] Write contract test for PATCH /collages/{guid}/photos/{id} in `spec/requests/photos_update_spec.rb`
   - Test HTTP 200 with valid dimensions
   - Test HTTP 403 with read-only GUID
   - Test HTTP 422 with invalid dimensions (size != width × height)
@@ -292,7 +292,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/photos_update_spec.rb`
   - **Rollback**: `rm spec/requests/photos_update_spec.rb`
 
-- [ ] **T031** Update CollagesController for Rails 7.2 JSON API in `app/controllers/collages_controller.rb`
+- [x] **T031** Update CollagesController for Rails 7.2 JSON API in `app/controllers/collages_controller.rb`
   - Implement strong_parameters
   - Update create/show/update/destroy actions
   - Handle write_access logic in responses
@@ -301,7 +301,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/collages_*.rb`
   - **Rollback**: `git checkout app/controllers/collages_controller.rb`
 
-- [ ] **T032** Update PhotosController for Rails 7.2 JSON API in `app/controllers/photos_controller.rb`
+- [x] **T032** Update PhotosController for Rails 7.2 JSON API in `app/controllers/photos_controller.rb`
   - Implement strong_parameters
   - Update create/update/destroy actions
   - Handle ActiveStorage uploads
@@ -310,7 +310,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/requests/photos_*.rb`
   - **Rollback**: `git checkout app/controllers/photos_controller.rb`
 
-- [ ] **T033** Remove CarrierWave dependency
+- [ ] **T033** Remove CarrierWave dependency (DEFERRED - dual-read pattern in place)
   - Remove `mount_uploader` from Photo model
   - Remove `app/uploaders/` directory
   - Remove CarrierWave gem from Gemfile
@@ -319,7 +319,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout Gemfile app/models/photo.rb app/uploaders/`
 
-- [ ] **T034** Tag checkpoint: `backend-modernized`
+- [x] **T034** Tag checkpoint: `backend-modernized`
   - **Acceptance**: All backend tests pass
   - **Test**: `bundle exec rspec spec/models/ spec/requests/`
   - **Rollback**: `git tag -d backend-modernized`

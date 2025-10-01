@@ -1,23 +1,67 @@
 class PhotosController < ApplicationController
   before_action :scope_photos
+  before_action :check_write_access, only: [:create, :update, :destroy]
+  rescue_from Mongoid::Errors::DocumentNotFound, with: :not_found
+
   def index
-    respond_to do |format|
-      format.json { render json: @photos }
-    end
+    render json: @photos
   end
 
   def create
-    respond_to do |format|
-      if @photo = @photos.create(photo_params)
-        format.json { render json: @photo, status: :created, location: url_for([@collage,@photo]) }
-      else
-        format.json { render json: @photo.errors, status: :unprocessable_entity }
+    # Check for file size
+    if params[:photo][:image].present?
+      uploaded_file = params[:photo][:image]
+      if uploaded_file.respond_to?(:size) && uploaded_file.size > 10.megabytes
+        render json: { error: 'File too large. Maximum size is 10MB.' }, status: :payload_too_large
+        return
       end
+    end
+
+    @photo = @photos.build(photo_params)
+
+    # Check for duplicate hash if image is present
+    if params[:photo][:image].present?
+      uploaded_file = params[:photo][:image]
+
+      # Calculate hash of uploaded file
+      file_data = uploaded_file.read
+      uploaded_file.rewind
+      new_hash = Digest::SHA1.hexdigest(file_data)
+
+      # Check for existing photo with same hash
+      if @collage.photos.where(image_hash: new_hash).exists?
+        render json: { error: 'Duplicate image detected' }, status: :conflict
+        return
+      end
+
+      # Attach to ActiveStorage
+      @photo.image.attach(uploaded_file)
+
+      # Get metadata from ActiveStorage
+      if @photo.image.attached?
+        begin
+          analyzer = ActiveStorage::Analyzer::ImageAnalyzer.new(@photo.image.blob)
+          metadata = analyzer.metadata
+
+          @photo.image_width = metadata[:width] if metadata[:width]
+          @photo.image_height = metadata[:height] if metadata[:height]
+          @photo.image_hash = new_hash
+        rescue => e
+          Rails.logger.error "Error analyzing image: #{e.message}"
+        end
+      end
+    end
+
+    if @photo.save
+      render json: @photo.as_json, status: :created, location: collage_photo_url(@collage, @photo)
+    else
+      render json: @photo.errors, status: :unprocessable_entity
     end
   end
 
   def show
     @photo = @photos.find(params[:id])
+
     respond_to do |format|
       format.html { render 'root/index' }
       format.json { render json: @photo }
@@ -26,13 +70,30 @@ class PhotosController < ApplicationController
 
   def update
     @photo = @photos.find(params[:id])
-    respond_to do |format|
-      if @photo.update_attributes(photo_params)
-        format.json { render json: @photo }
-      else
-        format.json { render json: @photo.errors, status: :unprocessable_entity }
+
+    # Validate size = width × height if all three are provided
+    if params[:photo][:size] && params[:photo][:width] && params[:photo][:height]
+      size = params[:photo][:size].to_i
+      width = params[:photo][:width].to_i
+      height = params[:photo][:height].to_i
+
+      if size != width * height
+        render json: { size: ['must equal width × height'] }, status: :unprocessable_entity
+        return
       end
     end
+
+    if @photo.update_attributes(photo_params)
+      render json: @photo
+    else
+      render json: @photo.errors, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @photo = @photos.find(params[:id])
+    @photo.destroy
+    head :no_content
   end
 
   private
@@ -44,5 +105,15 @@ class PhotosController < ApplicationController
   def scope_photos
     @collage = Collage.find_by_guid!(params[:collage_id])
     @photos = @collage.photos
+  end
+
+  def check_write_access
+    unless @collage.write_access
+      render json: { error: 'Write access required' }, status: :forbidden
+    end
+  end
+
+  def not_found
+    render json: { error: 'Photo not found' }, status: :not_found
   end
 end

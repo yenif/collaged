@@ -9,9 +9,10 @@ gem 'mongo', '~> 2.13'
 gem 'bson', '~> 4.0'
 gem 'mini_racer'
 gem 'mongoid', '~> 9.0'
-gem 'uuidtools'
+gem 'sqlite3', '~> 2.0'  # For ActiveStorage only
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'rmagick', '~> 4.0'
+gem 'image_processing', '~> 1.12'
 
 # Assets - Rails 4.2 moved these out of the assets group
 gem 'sass-rails', '~> 5.0'
