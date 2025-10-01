@@ -1,23 +1,22 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 
-gem 'rails'
+ruby '2.7.8'
+gem 'rails', '~> 4.2.11'
+gem 'bigdecimal', '~> 1.4'
 gem "rails_best_practices"
 
-gem 'mongo'
-gem 'bson_ext'
-gem 'therubyracer'
-gem 'mongoid'
+gem 'mongo', '~> 2.2'
+gem 'bson', '~> 4.0'
+gem 'mini_racer'
+gem 'mongoid', '~> 5.0'
 gem 'uuidtools'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
-gem 'rmagick'
+gem 'rmagick', '~> 4.0'
 
-# Gems used only for assets and not required
-# in production environments by default.
-group :assets do
-  gem 'sass-rails'
-  gem 'coffee-rails'
-  gem 'uglifier'
-end
+# Assets - Rails 4.2 moved these out of the assets group
+gem 'sass-rails', '~> 5.0'
+gem 'coffee-rails', '~> 4.1'
+gem 'uglifier', '>= 1.3.0'
 
 gem 'jquery-rails'
 
@@ -25,17 +24,16 @@ gem 'jquery-rails'
 # gem 'unicorn'
 
 group :yenif, :development, :test, :cucumber do
-  gem 'debugger'
+  gem 'byebug'
+  gem 'test-unit', '~> 3.0'
   gem 'turn', :require => false
-  gem 'factory_girl_rails'
-  gem 'capybara'
+  gem 'factory_bot_rails'
+  gem 'capybara', '~> 2.18'
   gem 'cucumber-rails', :require => false
   gem "json_spec", :require => false
-  gem 'akephalos'
   gem 'spork'
   gem 'launchy'
-  gem 'factory_girl_rails'
-  gem 'rspec-rails'
+  gem 'rspec-rails', '~> 3.9'
   gem 'mongoid-rspec'
   gem 'database_cleaner'
 end

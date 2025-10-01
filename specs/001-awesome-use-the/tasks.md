@@ -98,7 +98,7 @@ Rails monolith structure at repository root:
 
 **CRITICAL PATH**: Sequential upgrades with test validation at each step.
 
-- [ ] **T008** Upgrade Ruby 1.9.2 → 2.7.8
+- [x] **T008** Upgrade Ruby 1.9.2 → 2.7.8
   - Update `.ruby-version`
   - Update Gemfile `ruby` directive
   - Run `bundle install`
@@ -107,7 +107,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec`
   - **Rollback**: `git checkout .ruby-version Gemfile Gemfile.lock`
 
-- [ ] **T009** Upgrade Rails 3.2.14 → 4.2.11.3 (EOL but necessary step)
+- [x] **T009** Upgrade Rails 3.2.14 → 4.2.11.3 (EOL but necessary step)
   - Update `Gemfile`: `gem 'rails', '~> 4.2.11'`
   - Run `bundle update rails`
   - Update `config/application.rb` for Rails 4.2

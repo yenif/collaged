@@ -17,8 +17,6 @@ class Collage
   validates_presence_of :rw_guid
   validates_presence_of :title
 
-  attr_accessible :title
-
   after_initialize :write_access_on_initialize
   attr_accessor :write_access
   def write_access

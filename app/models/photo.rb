@@ -18,8 +18,6 @@ class Photo
 
   embedded_in :collage
 
-  attr_accessible :caption, :ordinal, :image, :size, :height, :width, :custom_aspect
-
   before_save :set_default_dimensions
 
   def image_url

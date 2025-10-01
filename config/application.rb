@@ -4,14 +4,12 @@ require File.expand_path('../boot', __FILE__)
 # require "active_record/railtie"
 require "action_controller/railtie"
 require "action_mailer/railtie"
-require "active_resource/railtie"
 require "sprockets/railtie"
 require "rails/test_unit/railtie"
 
-# If you have a Gemfile, require the default gems, the ones in the
-# current environment and also include :assets gems if in development
-# or test environments.
-Bundler.require *Rails.groups(:assets) if defined?(Bundler)
+# Require the gems listed in Gemfile, including any gems
+# you've limited to :test, :development, or :production.
+Bundler.require(*Rails.groups)
 
 module Collaged
   class Application < Rails::Application
@@ -45,6 +43,9 @@ module Collaged
 
     # Enable the asset pipeline
     config.assets.enabled = true
+
+    # Rails 4.2 requires this to be set
+    config.active_record.raise_in_transactional_callbacks = true if config.respond_to?(:active_record)
 
     config.generators do |g|
       g.view_specs false
