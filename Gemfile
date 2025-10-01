@@ -1,14 +1,15 @@
 source 'https://rubygems.org'
 
 ruby '2.7.8'
-gem 'rails', '~> 4.2.11'
+gem 'rails', '~> 5.2.8'
+gem 'bootsnap', require: false
 gem 'bigdecimal', '~> 1.4'
 gem "rails_best_practices"
 
-gem 'mongo', '~> 2.2'
+gem 'mongo', '~> 2.13'
 gem 'bson', '~> 4.0'
 gem 'mini_racer'
-gem 'mongoid', '~> 5.0'
+gem 'mongoid', '~> 6.4'
 gem 'uuidtools'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'rmagick', '~> 4.0'
@@ -24,11 +25,12 @@ gem 'jquery-rails'
 # gem 'unicorn'
 
 group :yenif, :development, :test, :cucumber do
+  gem 'listen', '~> 3.0'
   gem 'byebug'
   gem 'test-unit', '~> 3.0'
   gem 'turn', :require => false
   gem 'factory_bot_rails'
-  gem 'capybara', '~> 2.18'
+  gem 'capybara', '~> 3.0'
   gem 'cucumber-rails', :require => false
   gem "json_spec", :require => false
   gem 'spork'

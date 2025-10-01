@@ -117,7 +117,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec && rails server`
   - **Rollback**: `git checkout Gemfile* config/ app/controllers/`
 
-- [ ] **T010** Update Rails 4.2 deprecation warnings
+- [x] **T010** Update Rails 4.2 deprecation warnings
   - Fix ActiveRecord relation warnings
   - Update test helper configurations
   - Remove deprecated `before_filter` → `before_action`
@@ -125,7 +125,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec 2>&1 | grep DEPRECATION`
   - **Rollback**: `git checkout app/`
 
-- [ ] **T011** Tag checkpoint: `rails-4.2-stable`
+- [x] **T011** Tag checkpoint: `rails-4.2-stable`
   - **Acceptance**: Tag created, tests passing
   - **Test**: `git tag -l | grep rails-4.2`
   - **Rollback**: `git tag -d rails-4.2-stable`
