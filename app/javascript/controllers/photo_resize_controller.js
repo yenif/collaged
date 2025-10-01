@@ -73,6 +73,11 @@ export default class extends Controller {
 
     this.rafPending = true
 
+    // Capture mouse position before requestAnimationFrame
+    // (event object becomes stale inside the callback)
+    const clientX = event.clientX
+    const clientY = event.clientY
+
     requestAnimationFrame(() => {
       const rect = this.element.getBoundingClientRect()
 
@@ -83,13 +88,13 @@ export default class extends Controller {
       // Only update the dimension for the edge being dragged
       if (this.resizeEdge.right || this.resizeEdge.left) {
         // Horizontal resize: calculate grid cells based on mouse position
-        const x = Math.round((event.clientX - rect.left) / this.gridXInc)
+        const x = Math.round((clientX - rect.left) / this.gridXInc)
         newWidth = Math.max(1, x)
       }
 
       if (this.resizeEdge.bottom || this.resizeEdge.top) {
         // Vertical resize: calculate grid cells based on mouse position
-        const y = Math.round((event.clientY - rect.top) / this.gridYInc)
+        const y = Math.round((clientY - rect.top) / this.gridYInc)
         newHeight = Math.max(1, y)
       }
 
@@ -100,16 +105,11 @@ export default class extends Controller {
         this.sizeValue = newWidth * newHeight
         this.customAspectValue = true
 
-        // Dispatch event to trigger grid reflow
-        this.dispatch('dimensionsChanged', {
-          detail: {
-            photoId: this.photoIdValue,
-            width: newWidth,
-            height: newHeight,
-            size: newWidth * newHeight,
-            customAspect: true
-          }
-        })
+        // Update element size directly for immediate visual feedback
+        this.element.style.width = `${newWidth * this.gridXInc - 2}px`
+        this.element.style.height = `${newHeight * this.gridYInc - 2}px`
+
+        // Don't trigger grid reflow during drag - wait for mouseup
       }
 
       this.rafPending = false
@@ -133,9 +133,20 @@ export default class extends Controller {
     // Reset cursor
     this.element.style.cursor = ''
 
-    // Save photo dimensions to server
+    // Save photo dimensions to server and trigger grid reflow
     if (this.resizing) {
       this.savePhoto()
+
+      // Now trigger grid reflow with final dimensions
+      this.dispatch('dimensionsChanged', {
+        detail: {
+          photoId: this.photoIdValue,
+          width: this.widthValue,
+          height: this.heightValue,
+          size: this.sizeValue,
+          customAspect: this.customAspectValue
+        }
+      })
     }
 
     this.resizing = false
