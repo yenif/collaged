@@ -12,11 +12,8 @@ class Photo
   field :width, type: Integer
   field :custom_aspect, type: Boolean
 
-  # ActiveStorage attachment (modern)
-  has_one_attached :image
-
-  # CarrierWave (legacy - temporary during migration)
-  mount_uploader :legacy_image, ImageUploader
+  # Image upload using CarrierWave
+  mount_uploader :image, ImageUploader
   field :image_height, type: Integer
   field :image_width, type: Integer
   field :image_hash, type: String
@@ -25,30 +22,18 @@ class Photo
 
   before_save :set_default_dimensions
 
-  # Dual-read pattern: Try ActiveStorage first, fallback to CarrierWave
+  # Image URL using CarrierWave
   def image_url
-    if image.attached?
-      Rails.application.routes.url_helpers.rails_blob_path(image, only_path: true)
-    elsif legacy_image.present?
-      legacy_image.url
-    end
+    image.url if image.present?
   end
 
-  # Image variants for ActiveStorage
+  # Image variants using CarrierWave versions
   def image_thumb_url
-    return nil unless image.attached?
-    Rails.application.routes.url_helpers.rails_representation_url(
-      image.variant(resize_to_limit: [150, 150]),
-      only_path: true
-    )
+    image.thumb.url if image.present?
   end
 
   def image_grid_url
-    return nil unless image.attached?
-    Rails.application.routes.url_helpers.rails_representation_url(
-      image.variant(resize_to_limit: [800, 800]),
-      only_path: true
-    )
+    image.grid.url if image.present?
   end
 
   def as_json(params = {})

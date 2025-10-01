@@ -11,7 +11,7 @@ gem 'mini_racer'
 gem 'mongoid', '~> 9.0'
 gem 'sqlite3', '~> 2.0'  # For ActiveStorage only
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
-gem 'rmagick', '~> 4.0'
+gem 'rmagick', '~> 6.0'
 gem 'image_processing', '~> 1.12'
 
 # Assets - Rails 4.2 moved these out of the assets group

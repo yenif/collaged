@@ -1,0 +1,43 @@
+# Ignore files for Docker build
+.git
+.gitignore
+.env
+.env.*
+
+# Development files
+log/*
+tmp/*
+storage/*
+.byebug_history
+.DS_Store
+
+# Test files
+spec/
+test/
+coverage/
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Dependencies (will be installed fresh)
+vendor/bundle/
+node_modules/
+
+# Build artifacts
+public/assets/
+public/packs/
+public/packs-test/

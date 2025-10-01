@@ -261,7 +261,9 @@ GEM
     nio4r (2.7.4)
     nokogiri (1.18.10-arm64-darwin)
       racc (~> 1.4)
+    observer (0.1.2)
     openapi_parser (2.2.6)
+    pkg-config (1.6.4)
     power_assert (2.0.5)
     pp (0.6.2)
       prettyprint
@@ -328,7 +330,9 @@ GEM
       io-console (~> 0.5)
     require_all (3.0.0)
     rexml (3.4.4)
-    rmagick (4.3.0)
+    rmagick (6.1.4)
+      observer (~> 0.1)
+      pkg-config (~> 1.4)
     rspec (3.13.1)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -445,7 +449,7 @@ DEPENDENCIES
   mongoid-rspec
   rails (~> 7.2)
   rails_best_practices
-  rmagick (~> 4.0)
+  rmagick (~> 6.0)
   rspec-rails (~> 6.1)
   sass-rails (~> 5.0)
   selenium-webdriver
