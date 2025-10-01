@@ -19,7 +19,12 @@ gem 'sass-rails', '~> 5.0'
 gem 'coffee-rails', '~> 4.1'
 gem 'uglifier', '>= 1.3.0'
 
-gem 'jquery-rails'
+gem 'jquery-rails'  # Legacy - kept for backward compatibility (not used by Stimulus controllers)
+
+# Hotwire (Turbo + Stimulus)
+gem 'importmap-rails'
+gem 'turbo-rails'
+gem 'stimulus-rails'
 
 # Use unicorn as the web server
 # gem 'unicorn'

@@ -330,7 +330,7 @@ Rails monolith structure at repository root:
 
 **Prerequisites**: Phase P2 complete (Rails 7.2 backend stable)
 
-- [ ] **T035** Install Hotwire dependencies
+- [x] **T035** Install Hotwire dependencies
   - Update `Gemfile`: `gem 'turbo-rails'`, `gem 'stimulus-rails'`
   - Run `bundle install`
   - Run `rails turbo:install stimulus:install`
@@ -339,7 +339,7 @@ Rails monolith structure at repository root:
   - **Test**: `rails assets:precompile`
   - **Rollback**: `git checkout Gemfile* config/ app/javascript/`
 
-- [ ] **T036** Create Stimulus controller for collage creation in `app/javascript/controllers/collage_form_controller.js`
+- [x] **T036** Create Stimulus controller for collage creation in `app/javascript/controllers/collage_form_controller.js`
   - Handle form submission via Turbo Frame
   - Display validation errors inline
   - Redirect to collage show page on success
@@ -347,7 +347,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test + system test
   - **Rollback**: `rm app/javascript/controllers/collage_form_controller.js`
 
-- [ ] **T037** Create Stimulus controller for photo upload in `app/javascript/controllers/upload_controller.js`
+- [x] **T037** Create Stimulus controller for photo upload in `app/javascript/controllers/upload_controller.js`
   - Implement ActiveStorage Direct Upload
   - Handle multi-file selection (File API)
   - Display progress bars with percentage
@@ -358,7 +358,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test (upload same file twice) + system test spec/system/photo_upload_spec.rb
   - **Rollback**: `rm app/javascript/controllers/upload_controller.js`
 
-- [ ] **T038** Create Stimulus controller for drag-and-drop resize in `app/javascript/controllers/photo_resize_controller.js`
+- [x] **T038** Create Stimulus controller for drag-and-drop resize in `app/javascript/controllers/photo_resize_controller.js`
   - Detect cursor within 10px of edge for all four sides (left: X < photo.x + 10, right: X > photo.x + width - 10, top: Y < photo.y + 10, bottom: Y > photo.y + height - 10)
   - Handle drag events (mousedown, mousemove, mouseup) with appropriate cursor styles
   - Update grid dimensions (size, width, height) maintaining size = width × height constraint
@@ -368,7 +368,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test with Chrome DevTools Performance (record timeline, verify no dropped frames)
   - **Rollback**: `rm app/javascript/controllers/photo_resize_controller.js`
 
-- [ ] **T039** Create Stimulus controller for grid layout in `app/javascript/controllers/grid_controller.js`
+- [x] **T039** Create Stimulus controller for grid layout in `app/javascript/controllers/grid_controller.js`
   - Calculate photo positions (left-to-right, top-to-bottom)
   - Handle grid re-flow on resize/delete
   - Snap to cell boundaries
@@ -376,7 +376,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test + visual regression
   - **Rollback**: `rm app/javascript/controllers/grid_controller.js`
 
-- [ ] **T040** Update views to use Turbo Frames in `app/views/collages/`
+- [x] **T040** Update views to use Turbo Frames in `app/views/collages/`
   - Wrap collage form in `<turbo-frame>`
   - Add Stimulus `data-controller` attributes
   - Remove Backbone templates
@@ -384,7 +384,7 @@ Rails monolith structure at repository root:
   - **Test**: `rails server` + manual verification
   - **Rollback**: `git checkout app/views/`
 
-- [ ] **T041** Remove Backbone.js and dependencies
+- [x] **T041** Remove Backbone.js and dependencies
   - Delete `app/assets/javascripts/models/`
   - Delete `app/assets/javascripts/views/`
   - Delete `app/assets/javascripts/routers/`
@@ -393,7 +393,7 @@ Rails monolith structure at repository root:
   - **Test**: `rails server` + full manual QA
   - **Rollback**: `git checkout app/assets/javascripts/`
 
-- [ ] **T042** Replace jQuery with native JavaScript where possible
+- [x] **T042** Replace jQuery with native JavaScript where possible
   - Update event handlers to use `addEventListener`
   - Replace `$.ajax` with `fetch` or Turbo
   - Remove jQuery dependency if unused
@@ -401,7 +401,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test
   - **Rollback**: `git checkout app/javascript/`
 
-- [ ] **T043** Replace Underscore.js with ES6+ methods
+- [x] **T043** Replace Underscore.js with ES6+ methods
   - Replace `_.each` → `Array.forEach`
   - Replace `_.map` → `Array.map`
   - Replace `_.filter` → `Array.filter`
@@ -410,7 +410,7 @@ Rails monolith structure at repository root:
   - **Test**: Manual browser test
   - **Rollback**: `git checkout app/javascript/`
 
-- [ ] **T044** Tag checkpoint: `frontend-modernized`
+- [x] **T044** Tag checkpoint: `frontend-modernized`
   - **Acceptance**: Full application works with Hotwire
   - **Test**: `rails server` + quickstart.md scenarios
   - **Rollback**: `git tag -d frontend-modernized`

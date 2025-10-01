@@ -15,7 +15,7 @@ class CollagesController < ApplicationController
     @collage = Collage.find_by_guid!(params[:id])
 
     respond_to do |format|
-      format.html { render 'root/index' }
+      format.html { render 'collages/show' }
       format.json { render json: collage_json(@collage) }
     end
   end
