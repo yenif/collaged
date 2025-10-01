@@ -180,7 +180,7 @@ Rails monolith structure at repository root:
   - **Test**: `bundle exec rspec spec/models/`
   - **Rollback**: `git checkout Gemfile* config/mongoid.yml app/models/`
 
-- [ ] **T018** Create MongoDB indexes for modern Mongoid
+- [x] **T018** Create MongoDB indexes for modern Mongoid
   - Run `rails db:mongoid:create_indexes`
   - Verify `r_guid`, `rw_guid` unique indexes
   - Verify `photos.ordinal`, `photos.image_hash` indexes
@@ -188,7 +188,7 @@ Rails monolith structure at repository root:
   - **Test**: `mongo collaged_development --eval 'db.collages.getIndexes()'`
   - **Rollback**: `mongo collaged_development --eval 'db.collages.dropIndexes()'`
 
-- [ ] **T019** Tag checkpoint: `rails-7.2-mongoid-9-stable`
+- [x] **T019** Tag checkpoint: `rails-7.2-mongoid-9-stable`
   - **Acceptance**: Tag created, full test suite passes
   - **Test**: `bundle exec rspec && bundle exec rails server`
   - **Rollback**: `git tag -d rails-7.2-mongoid-9-stable`
