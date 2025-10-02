@@ -1,9 +1,8 @@
 
-# Implementation Plan: Collage Editing Functionality Recovery
+# Implementation Plan: Restore Photo Drag-and-Drop Reordering
 
-**Branch**: `001-awesome-use-the` | **Date**: 2025-09-30 | **Spec**: [spec.md](./spec.md)
+**Branch**: `001-awesome-use-the` | **Date**: 2025-10-01 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/spec.md`
-**User Context**: get frontend collage editing functionality working again
 
 ## Execution Flow (/plan command scope)
 ```
@@ -32,50 +31,74 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-This plan focuses on restoring and verifying the frontend collage editing functionality in the recently modernized Collaged application. The app has been upgraded from Rails 3.2/Backbone.js to Rails 7.2/Hotwire (Turbo + Stimulus), and while the Stimulus controllers have been implemented (grid_controller.js, upload_controller.js, photo_resize_controller.js), the user reports that "frontend collage editing functionality" needs to be "working again."
+**Issue Identified**: User observation "looks like we lost drag and drop reorder!" after Rails 7.2 modernization.
 
-**Primary Requirements:**
-- Restore full photo upload capability (drag-and-drop + file picker)
-- Restore photo resizing via edge dragging
-- Restore grid layout rendering with aspect ratio preservation
-- Ensure all Stimulus controllers properly communicate via events
-- Verify CRUD operations work through the Rails 7.2 API
+**Critical Discovery**: After reviewing legacy Backbone.js code (see LEGACY_ANALYSIS.md), photo reordering was **never fully implemented** in the original system. The frontend had a `handle_move()` placeholder that only logged mouse coordinates without any reordering logic. This is **new functionality**, not restoration.
 
-**Technical Approach:**
-- Diagnose current state of Stimulus controllers and event wiring
-- Verify backend API endpoints return proper JSON responses
-- Test Hotwire integration (Turbo Drive, event dispatching)
-- Ensure CSRF tokens, Fetch API, and modern browser APIs work correctly
-- Validate grid layout algorithm and photo positioning
+**Backend State**:
+- ✅ Photo.ordinal field exists with index
+- ✅ Controller permits ordinal updates
+- ✅ Photos sorted by ordinal on load
+- ❌ Frontend never updated ordinals for reordering (neither legacy nor current)
+
+**Primary Requirement**: Implement (not restore) the ability to reorder photos within a collage using drag-and-drop interaction, completing the unfinished infrastructure from the legacy system while maintaining 60fps performance and all existing resize functionality.
+
+**Technical Approach**: Implement a new Stimulus controller for drag-and-drop reordering that works alongside the existing photo-resize controller, using the HTML5 Drag and Drop API with ordinal field updates persisted to the server. This completes the original architectural intent evidenced by the prepared backend ordinal field.
 
 ## Technical Context
-**Language/Version**: Ruby 3.3.0, JavaScript (ES6+)
-**Primary Dependencies**: Rails 7.2.2, Hotwire (Turbo 8.x, Stimulus 3.x), Mongoid 9.0.x, RMagick 6.x, CarrierWave
-**Storage**: MongoDB (collages, photos), SQLite3 (ActiveStorage blobs), File system (image uploads via CarrierWave)
-**Testing**: RSpec 6.1, Capybara 3.x, Selenium WebDriver, FactoryBot
-**Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge), Server: Linux/macOS
-**Project Type**: web (Rails monolith with frontend/backend combined)
-**Performance Goals**: <100ms page load (NFR-001), 60fps during resize operations (requestAnimationFrame), progressive image loading (NFR-002)
-**Constraints**: 10MB max file size, support JPG/PNG/GIF only, no authentication required (GUID-based access)
-**Scale/Scope**: Single-page app per collage, unlimited collages, grid layout with 100x100px cells, aspect ratio preservation via prime factorization
+**Language/Version**: Ruby 3.3.0, JavaScript ES6+ (Rails 7.2.2 application)
+**Primary Dependencies**: Hotwire (Turbo 8.x, Stimulus 3.x), Mongoid 9.0.x, RMagick 6.x, CarrierWave
+**Storage**: MongoDB (collages, photos with ordinal field), SQLite3 (ActiveStorage blobs), File system (image uploads)
+**Testing**: RSpec 6.1 with Capybara 3.x for system tests, performance specs for drag-and-drop validation
+**Target Platform**: Modern web browsers (Chrome, Firefox, Safari) with HTML5 Drag and Drop API support
+**Project Type**: Web application (Rails backend + JavaScript frontend with Hotwire)
+**Performance Goals**: 60fps during drag operations (<16.67ms per frame), <100ms page load for collage display
+**Constraints**: Must preserve existing photo resize functionality, maintain grid-based layout system, support concurrent editing (last-write-wins)
+**Scale/Scope**: Single-page collage editing interface, affects grid_controller.js and photos collection rendering, estimated 3-5 new functions
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Status**: PASS (no constitution file found at `/Users/bf/.claude/memory/constitution.md`)
+### I. Feature Preservation ✅ PASS
+- **Status**: COMPLIANT - This change RESTORES a lost feature from the legacy system
+- **Evidence**: Photo model has `ordinal` field (photo.rb:7-8), controller permits ordinal updates (photos_controller.rb:102), but no frontend drag-and-drop UI exists
+- **Impact**: Restores functionality that existed in the Backbone.js implementation but was lost during Hotwire migration
 
-Since no project constitution exists, default software engineering best practices apply:
-- ✅ Keep it simple (restore existing functionality, no new abstractions)
-- ✅ Test-driven approach where practical (leverage existing RSpec/Capybara tests)
-- ✅ Follow existing patterns (Stimulus controllers, Rails conventions)
-- ✅ Minimize changes (diagnostic fixes only, preserve modernization work)
+### II. Incremental Modernization ✅ PASS
+- **Status**: COMPLIANT - Small, isolated change to JavaScript controllers
+- **Approach**: Add new drag-and-drop controller alongside existing photo-resize controller without modifying backend
+- **Rollback**: Can be easily removed by deleting new controller and reverting view changes
+
+### III. Test Coverage Before Changes ✅ PASS
+- **Status**: COMPLIANT - Characterization test exists (spec/performance/drag_drop_spec.rb)
+- **Action**: Implement the skipped performance test before adding drag-and-drop functionality
+- **Coverage**: Will add integration tests for ordinal updates and system tests for drag interaction
+
+### IV. Technology Stack Modernization ✅ PASS
+- **Status**: COMPLIANT - Uses Stimulus (modern framework) with HTML5 Drag and Drop API
+- **Rationale**: Follows established Hotwire patterns used in photo-resize controller
+- **Consistency**: Matches architecture decisions from completed Rails 7.2 upgrade
+
+### V. Data Integrity ✅ PASS
+- **Status**: COMPLIANT - No schema changes required
+- **Evidence**: Ordinal field already exists in Photo model with index
+- **Safety**: Updates use existing PATCH endpoint with strong parameter validation
+
+### VI. Performance Preservation ✅ PASS
+- **Status**: COMPLIANT - Must match or exceed legacy drag performance
+- **Target**: 60fps (< 16.67ms per frame) per NFR-001 and existing performance spec
+- **Validation**: Use requestAnimationFrame throttling like photo-resize controller
+
+### VII. Documentation and Knowledge Transfer ✅ PASS
+- **Status**: COMPLIANT - This plan documents the gap and restoration approach
+- **Context**: Captures that ordinal field exists but drag UI was lost during modernization
+- **Knowledge**: Documents interaction between drag-and-drop and resize controllers
 
 ## Project Structure
 
 ### Documentation (this feature)
 ```
 specs/001-awesome-use-the/
-├── spec.md              # Feature specification (completed)
 ├── plan.md              # This file (/plan command output)
 ├── research.md          # Phase 0 output (/plan command)
 ├── data-model.md        # Phase 1 output (/plan command)
@@ -88,50 +111,34 @@ specs/001-awesome-use-the/
 ```
 app/
 ├── controllers/
-│   ├── collages_controller.rb    # Collage CRUD + JSON API
-│   ├── photos_controller.rb      # Photo CRUD + JSON API
-│   ├── root_controller.rb         # Homepage
-│   └── application_controller.rb
+│   └── photos_controller.rb          # Existing: permits ordinal parameter
 ├── models/
-│   ├── collage.rb                 # Mongoid model with GUIDs
-│   └── photo.rb                   # Mongoid embedded document
+│   ├── collage.rb                     # Existing: embeds photos
+│   └── photo.rb                       # Existing: has ordinal field with index
 ├── views/
-│   ├── collages/
-│   │   ├── index.html.erb         # Homepage
-│   │   ├── new.html.erb           # Create collage form
-│   │   └── show.html.erb          # Collage editor (main UI)
-│   └── layouts/
-│       └── application.html.erb   # Layout with Hotwire includes
+│   └── collages/
+│       └── show.html.erb              # To be modified: add drag-and-drop attributes
 ├── javascript/
-│   ├── application.js             # Importmap entry point
 │   └── controllers/
-│       ├── grid_controller.js     # Photo grid layout & rendering
-│       ├── upload_controller.js   # File upload & drag-and-drop
-│       ├── photo_resize_controller.js  # Resize edge dragging
-│       ├── collage_form_controller.js  # Create collage form
-│       └── helpers/
-│           └── math_helpers.js    # Aspect ratio calculations
+│       ├── grid_controller.js         # To be modified: add drag event handling
+│       ├── photo_resize_controller.js # Existing: handles resize operations
+│       └── photo_reorder_controller.js # NEW: handles drag-and-drop reordering
 └── assets/
     └── stylesheets/
-        └── application.css        # Sass styles
+        └── collages.scss              # To be modified: add drag cursor styles
 
 spec/
-├── models/                        # Mongoid model specs
-├── requests/                      # API endpoint specs
-└── system/                        # Capybara integration tests
-
-config/
-├── mongoid.yml                    # MongoDB configuration
-├── database.yml                   # SQLite (ActiveStorage)
-├── storage.yml                    # CarrierWave storage
-└── importmap.rb                   # JavaScript dependencies
+├── models/
+│   └── photo_spec.rb                  # Existing: validates ordinal field
+├── requests/
+│   └── photos_update_spec.rb          # Existing: tests PATCH with ordinal
+├── system/
+│   └── photo_reorder_spec.rb          # NEW: drag-and-drop system tests
+└── performance/
+    └── drag_drop_spec.rb              # Existing but skipped: implement tests
 ```
 
-**Structure Decision**: Rails 7.2 monolith (web application) with:
-- Backend: Rails controllers + Mongoid models
-- Frontend: Hotwire (Turbo + Stimulus) via Importmap
-- Storage: MongoDB (data) + SQLite (ActiveStorage) + filesystem (images)
-- Testing: RSpec with request/system specs
+**Structure Decision**: Rails monolith with Hotwire frontend. JavaScript controllers live in `app/javascript/controllers/`, models in `app/models/`, specs in `spec/`. This follows standard Rails 7.2 conventions with Stimulus controllers for frontend interactivity.
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -191,19 +198,53 @@ config/
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+Since the Photo model and photos_controller already exist with ordinal field support, the /tasks command will generate tasks focused on frontend restoration:
+
+1. **Test Setup Tasks** (from skipped performance test):
+   - Implement spec/performance/drag_drop_spec.rb [P]
+   - Add system test: spec/system/photo_reorder_spec.rb [P]
+   - Add Stimulus controller test: spec/javascript/photo_reorder_controller_spec.js [P]
+
+2. **Implementation Tasks** (TDD order):
+   - Create photo_reorder_controller.js (new Stimulus controller)
+   - Add drag event handlers (dragstart, dragover, drop, dragend)
+   - Implement ordinal update logic
+   - Add visual feedback styles (CSS)
+   - Update grid_controller.js to listen for reorder events
+   - Update collages/show.html.erb to add draggable attributes
+
+3. **Integration Tasks**:
+   - Wire photo_reorder_controller to photo elements
+   - Connect reorder controller to grid controller via events
+   - Add CSRF token handling for PATCH requests
+   - Test resize + reorder interaction (no conflicts)
+
+4. **Validation Tasks**:
+   - Run quickstart validation (Scenario 7)
+   - Performance test: verify 60fps during drag
+   - Accessibility test: keyboard navigation
+   - Cross-browser test: Chrome, Firefox, Safari
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+- Tests first (TDD): performance spec → system spec → controller spec → implementation
+- Core functionality: photo_reorder_controller → CSS styles → view updates
+- Integration: event wiring → grid reflow → CSRF handling
+- Validation: manual testing → performance → accessibility
+- Mark [P] for parallel test creation (independent spec files)
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: 15-20 numbered, ordered tasks in tasks.md
+
+**Dependencies**:
+- No backend changes needed (ordinal field exists, controller permits it)
+- No data migrations needed (Photo model already has ordinal with index)
+- Builds on existing grid_controller.js and photo_resize_controller.js patterns
+
+**Key Design Decisions from Research**:
+- HTML5 Drag and Drop API (native browser support)
+- Separate photo_reorder_controller.js (single responsibility)
+- Recalculate all ordinals sequentially after drag
+- requestAnimationFrame throttling for 60fps performance
+- Last-write-wins for concurrent edits (matches FR-040)
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -223,76 +264,43 @@ config/
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
 
 
-## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
-
-**Task Generation Strategy**:
-The /tasks command will analyze the diagnostic research findings and generate targeted tasks to restore frontend functionality. Tasks will be organized by investigation area:
-
-1. **Diagnostic Tasks** (identify root cause):
-   - Verify Rails server starts and MongoDB connects
-   - Test Stimulus controller loading in browser console
-   - Inspect API endpoint JSON responses
-   - Check browser console for JavaScript errors
-   - Verify CSS loading and grid layout styles
-   - Test CSRF token presence in meta tags
-   - Check Turbo Drive configuration
-
-2. **Fix Tasks** (based on findings):
-   - Fix importmap configuration if controllers not loading
-   - Add/fix CSRF token handling if API calls fail
-   - Configure Turbo Drive (add data-turbo="false" if interfering)
-   - Fix ObjectId JSON serialization if photos don't render
-   - Fix CSS loading if grid layout is broken
-   - Fix event communication if controllers don't communicate
-
-3. **Verification Tasks** (confirm fixes work):
-   - Test collage creation end-to-end
-   - Test photo upload (file picker + drag-and-drop)
-   - Test photo rendering in grid
-   - Test photo resize interaction
-   - Test grid re-flow after resize
-   - Run existing RSpec/Capybara tests
-
-**Ordering Strategy**:
-1. **Investigation first**: Run all diagnostic tasks to identify root cause
-2. **Fix in order of likelihood**: Based on common post-migration issues (importmap → CSRF → Turbo → ObjectId → CSS)
-3. **Verify after each fix**: Test specific functionality before moving to next fix
-4. **Regression testing**: Run full test suite after all fixes applied
-
-**Dependencies**:
-- Diagnostic tasks are parallel (can run all at once)
-- Fix tasks are sequential (must identify issue before fixing)
-- Verification tasks depend on fixes being applied
-
-**Estimated Output**: 15-20 tasks covering diagnostic → fix → verify workflow
-
-**IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
-
 ## Progress Tracking
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [x] Phase 0: Research complete (/plan command) - ✅ research.md with diagnostic guidance
-- [x] Phase 1: Design complete (/plan command) - ✅ data-model.md, contracts/, quickstart.md exist
-- [x] Phase 2: Task planning complete (/plan command - describe approach only) - ✅ Strategy documented above
-- [x] Phase 3: Tasks generated (/tasks command) - ✅ tasks.md with 35 diagnostic/fix/verification tasks
+- [x] Phase 0: Research complete (/plan command)
+  - research.md created with comprehensive drag-and-drop analysis
+  - 6 research questions answered with decisions and rationale
+  - Technology choices documented (HTML5 Drag and Drop API, Stimulus architecture)
+- [x] Phase 1: Design complete (/plan command)
+  - data-model.md: Photo model with ordinal field documented
+  - contracts/photo_reorder.yml: OpenAPI 3.0 contract created
+  - quickstart.md: Scenario 7 (photo reordering validation) added
+  - CLAUDE.md: Updated with drag-and-drop context
+- [x] Phase 2: Task planning approach described (/plan command - describe approach only)
+  - Task generation strategy documented
+  - Ordering strategy defined (TDD, tests first)
+  - Estimated 15-20 tasks for frontend-only implementation
+- [ ] Phase 3: Tasks generated (/tasks command) - **NEXT STEP**
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [x] Initial Constitution Check: PASS (no constitution file, using best practices)
-- [x] Post-Design Constitution Check: PASS (existing design follows Rails/Hotwire patterns)
-- [x] All NEEDS CLARIFICATION resolved (Technical Context filled, research complete)
-- [x] Complexity deviations documented (N/A - no constitution violations)
+- [x] Initial Constitution Check: PASS (all 7 principles compliant)
+- [x] Post-Design Constitution Check: PASS (no violations, no complexity deviations)
+- [x] All NEEDS CLARIFICATION resolved (none in Technical Context)
+- [x] Complexity deviations documented (none - table empty)
 
 **Artifacts Generated**:
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/plan.md` (this file)
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/research.md` (Phase 0)
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/data-model.md` (Phase 1)
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/quickstart.md` (Phase 1)
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/contracts/collaged-api.yaml` (Phase 1)
-- ✅ `/Users/bf/Code/claude/collaged/specs/001-awesome-use-the/tasks.md` (exists, ready for /tasks command)
+- ✅ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/plan.md (this file)
+- ✅ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/research.md (updated with addendum)
+- ✅ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/data-model.md (existing, validated)
+- ✅ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/contracts/photo_reorder.yml (new)
+- ✅ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/quickstart.md (updated with Scenario 7)
+- ✅ /Users/bf/Code/claude/collaged/CLAUDE.md (updated with drag-and-drop context)
+- ⏳ /Users/bf/Code/claude/collaged/specs/001-awesome-use-the/tasks.md (generated by /tasks command)
+
+**Ready for**: `/tasks` command to generate implementation task list
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md` (not found, using defaults)*
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*

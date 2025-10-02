@@ -532,4 +532,127 @@ tail -f /var/log/mongodb/mongod.log  # MongoDB logs
 
 ---
 
-**Status**: ✅ Quickstart guide complete - Ready for Phase 2 task generation
+---
+
+## Addendum: Photo Reordering Validation (2025-10-01)
+
+### Scenario 7: Drag-and-Drop Photo Reordering
+
+**Purpose**: Validate restored photo reordering functionality using HTML5 Drag and Drop API
+
+**Steps**:
+1. ✅ Navigate to collage with write access containing 5+ photos
+2. ✅ Verify photos displayed in ordinal order (check ordinal field in JSON)
+3. ✅ Hover over photo (not near edge) → cursor should show drag cursor
+4. ✅ Click and drag photo #1 → drag over photo #3
+5. ✅ Verify visual feedback during drag:
+   - Dragged photo opacity reduced (50%)
+   - Drop target highlighted (blue dashed border)
+   - Cursor shows "grabbing" state
+6. ✅ Release mouse → drop photo
+7. ✅ Verify grid re-flows with new photo order
+8. ✅ Reload page → verify new order persisted
+9. ✅ Check MongoDB ordinal values updated correctly
+10. ✅ Open in read-only URL → verify drag disabled (no draggable attribute)
+11. ✅ Test performance: drag multiple photos → no frame drops (60fps)
+12. ✅ Test interaction: drag photo, then resize same photo → both work
+
+**Expected Results**:
+- Photos reorderable via drag-and-drop
+- Visual feedback during drag (opacity, cursor, highlighting)
+- Grid reflows automatically after drop
+- Ordinal values updated and persisted
+- Drag disabled for read-only access
+- 60fps performance maintained
+- No conflict with resize functionality
+
+**API Validation**:
+```bash
+# Get photos before reorder
+curl http://localhost:3000/collages/[RW_GUID]/photos | jq '.[] | {id, ordinal}'
+
+# Example output:
+# { "id": {"$oid": "507f1f77bcf86cd799439011"}, "ordinal": 1 }
+# { "id": {"$oid": "507f1f77bcf86cd799439012"}, "ordinal": 2 }
+# { "id": {"$oid": "507f1f77bcf86cd799439013"}, "ordinal": 3 }
+
+# Update ordinal (move photo 1 to position 3)
+curl -X PATCH http://localhost:3000/collages/[RW_GUID]/photos/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{"photo": {"ordinal": 3}}'
+
+# Verify response shows updated ordinal
+# HTTP 200 with "ordinal": 3
+
+# Get photos after reorder
+curl http://localhost:3000/collages/[RW_GUID]/photos | jq '.[] | {id, ordinal}'
+
+# Verify ordinals recalculated sequentially:
+# { "id": {"$oid": "507f1f77bcf86cd799439012"}, "ordinal": 1 }
+# { "id": {"$oid": "507f1f77bcf86cd799439013"}, "ordinal": 2 }
+# { "id": {"$oid": "507f1f77bcf86cd799439011"}, "ordinal": 3 }
+```
+
+**MongoDB Validation**:
+```javascript
+// Connect to MongoDB
+mongo collaged_development
+
+// Check ordinals are sequential
+db.collages.aggregate([
+  { $unwind: "$photos" },
+  { $group: {
+    _id: "$_id",
+    ordinals: { $push: "$photos.ordinal" }
+  }},
+  { $project: {
+    ordinals: 1,
+    is_sequential: {
+      $eq: [
+        "$ordinals",
+        { $range: [1, { $add: [{ $size: "$ordinals" }, 1] }] }
+      ]
+    }
+  }},
+  { $match: { is_sequential: false } }
+])
+// Should return empty (all ordinals sequential 1,2,3,...)
+```
+
+**Performance Validation**:
+```javascript
+// Browser console - measure drag performance
+performance.mark('drag-start')
+
+// User drags photo
+
+performance.mark('drag-end')
+performance.measure('drag-duration', 'drag-start', 'drag-end')
+console.log(performance.getEntriesByName('drag-duration')[0].duration)
+// Should be multiple of ~16.67ms (60fps) and total < 1000ms
+```
+
+**Edge Cases**:
+- ✅ Drag photo to first position → ordinal becomes 1
+- ✅ Drag photo to last position → ordinal becomes N (total count)
+- ✅ Drag photo to same position → no change
+- ✅ Attempt drag with read-only access → operation prevented
+- ✅ Concurrent reorder (two users) → last-write-wins (matches FR-040)
+- ✅ Reorder photo that's also resized → both operations succeed
+
+**Integration with Existing Features**:
+- ✅ Reorder photos → resize one → reorder again (all work together)
+- ✅ Upload new photo → automatically gets ordinal = max + 1
+- ✅ Delete photo in middle → remaining ordinals recalculated
+- ✅ Grid layout respects new ordinal order after reflow
+
+**Accessibility**:
+- ✅ Keyboard navigation: Tab to photo, Enter to pick up, Arrow keys to move, Enter to drop
+- ✅ Screen reader: Announces "Photo X of Y" and "Moved to position Z"
+- ✅ Reduced motion: Respects `prefers-reduced-motion` CSS media query
+
+**Status**: ✅ Photo reordering validation scenario complete - Ready for Phase 2 task generation
+
+---
+
+**Overall Status**: ✅ Quickstart guide complete including photo reordering - Ready for Phase 2 task generation

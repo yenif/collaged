@@ -20,6 +20,7 @@ class Photo
 
   embedded_in :collage
 
+  before_create :set_ordinal
   before_save :set_default_dimensions
 
   # Image URL using CarrierWave
@@ -46,6 +47,11 @@ class Photo
   end
 
   private
+  def set_ordinal
+    # Set ordinal to the next available value (max + 1)
+    self.ordinal ||= (collage.photos.map(&:ordinal).compact.max || -1) + 1
+  end
+
   def set_default_dimensions
     unless self.height && self.width && self.height * self.width == self.size
       factors = (self.size ||= 1).factors

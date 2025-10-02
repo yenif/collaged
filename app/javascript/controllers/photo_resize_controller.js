@@ -23,8 +23,6 @@ export default class extends Controller {
   }
 
   startSpatialEdit(event) {
-    event.preventDefault()
-
     // Get mouse position relative to photo element
     const rect = this.element.getBoundingClientRect()
     const x = event.clientX - rect.left
@@ -38,7 +36,9 @@ export default class extends Controller {
 
     // Determine if this is a resize or move operation
     if (resizeLeft || resizeRight || resizeTop || resizeBottom) {
-      // Resize operation
+      // Resize operation - prevent default to avoid drag conflicts
+      event.preventDefault()
+
       this.resizing = true
       this.resizeEdge = {
         left: resizeLeft,
@@ -57,8 +57,9 @@ export default class extends Controller {
       document.addEventListener('mousemove', this.boundHandleResize)
       document.addEventListener('mouseup', this.boundEndSpatialEdit)
     } else {
-      // Move operation (not currently implemented)
-      console.log('Move operation detected but not supported')
+      // Move operation - allow drag-and-drop to handle it (don't prevent default!)
+      // The photo-reorder controller will handle dragging
+      console.log('Center click - drag-and-drop will handle movement')
     }
   }
 

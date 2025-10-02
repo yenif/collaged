@@ -19,6 +19,7 @@ Rails.application.config.assets.precompile += %w(
   controllers/collage_form_controller.js
   controllers/upload_controller.js
   controllers/photo_resize_controller.js
+  controllers/photo_reorder_controller.js
   controllers/grid_controller.js
   controllers/helpers/math_helpers.js
   controllers/application.js

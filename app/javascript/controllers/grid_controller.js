@@ -23,8 +23,32 @@ export default class extends Controller {
     this.boundHandleDimensionsChanged = this.handleDimensionsChanged.bind(this)
     this.element.addEventListener('photo-resize:dimensionsChanged', this.boundHandleDimensionsChanged)
 
+    // Listen for photo reorder events
+    this.boundHandlePhotoReordered = this.handlePhotoReordered.bind(this)
+    this.element.addEventListener('reorder:photoMoved', this.boundHandlePhotoReordered)
+
+    // Allow dropping on the container
+    this.boundHandleDragOver = this.handleDragOver.bind(this)
+    this.containerTarget.addEventListener('dragover', this.boundHandleDragOver)
+
     // Load existing photos
     this.loadPhotos()
+  }
+
+  handleDragOver(event) {
+    // Allow dropping on the container
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+  }
+
+  disconnect() {
+    // Clean up event listeners to prevent memory leaks
+    this.element.removeEventListener('upload:photoUploaded', this.boundHandlePhotoUploaded)
+    this.element.removeEventListener('photo-resize:dimensionsChanged', this.boundHandleDimensionsChanged)
+    this.element.removeEventListener('reorder:photoMoved', this.boundHandlePhotoReordered)
+    if (this.containerTarget) {
+      this.containerTarget.removeEventListener('dragover', this.boundHandleDragOver)
+    }
   }
 
   async loadPhotos() {
@@ -73,6 +97,23 @@ export default class extends Controller {
       // Persist changes to server
       this.updatePhotoOnServer(photoId, { width, height, size, custom_aspect: customAspect })
     }
+  }
+
+  async handlePhotoReordered(event) {
+    const { photoId, oldOrdinal, newOrdinal } = event.detail
+
+    console.log("Grid controller received reorder event:", {
+      photoId,
+      oldOrdinal,
+      newOrdinal
+    })
+
+    // Reload photos from server to get fresh ordinal values
+    // This ensures we have the latest state after the reorder
+    await this.loadPhotos()
+
+    // Photos are already sorted by ordinal from the server
+    // render() will place them in the new order
   }
 
   render() {
@@ -200,10 +241,12 @@ export default class extends Controller {
     div.style.width = `${position.w - 2}px`  // Subtract 2px for border
     div.style.height = `${position.h - 2}px`
 
-    // Add photo-resize controller
-    div.dataset.controller = 'photo-resize'
+    // Add photo-resize and photo-reorder controllers
+    div.dataset.controller = 'photo-resize photo-reorder'
     // Handle MongoDB ObjectId format {$oid: "..."} or plain string
     const photoId = typeof photo.id === 'object' && photo.id.$oid ? photo.id.$oid : photo.id
+
+    // Photo-resize controller values
     div.dataset.photoResizePhotoIdValue = photoId
     div.dataset.photoResizeCollageIdValue = this.collageIdValue
     div.dataset.photoResizeImageWidthValue = photo.image_width
@@ -212,7 +255,18 @@ export default class extends Controller {
     div.dataset.photoResizeWidthValue = photo.width
     div.dataset.photoResizeHeightValue = photo.height
     div.dataset.photoResizeCustomAspectValue = photo.custom_aspect || false
-    div.dataset.action = 'mousedown->photo-resize#startSpatialEdit'
+
+    // Photo-reorder controller values
+    div.dataset.photoReorderPhotoIdValue = photoId
+    div.dataset.photoReorderCollageIdValue = this.collageIdValue
+    div.dataset.photoReorderOrdinalValue = photo.ordinal || 0
+
+    // Make photo draggable for reordering
+    // Only if we have write access (this would need to be passed from the view)
+    div.draggable = true
+
+    // Action handlers for both controllers
+    div.dataset.action = 'mousedown->photo-resize#startSpatialEdit dragstart->photo-reorder#startDrag dragover->photo-reorder#handleDragOver dragleave->photo-reorder#handleDragLeave drop->photo-reorder#handleDrop dragend->photo-reorder#endDrag'
 
     // Calculate image dimensions for cover-fit with center crop
     const containerAspect = position.h / position.w
@@ -238,6 +292,7 @@ export default class extends Controller {
 
     const img = document.createElement('img')
     img.src = photo.image_url
+    img.draggable = false  // Prevent img from being dragged independently
     img.style.position = imgStyle.position
     img.style.width = imgStyle.width
     img.style.height = imgStyle.height
