@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+require 'logger' # Ruby 2.7 needs this explicitly for Rails 6.1
+APP_PATH = File.expand_path('../config/application', __dir__)
+require_relative '../config/boot'
+require 'rails/commands'

@@ -1,0 +1,331 @@
+openapi: 3.0.3
+info:
+  title: Photo Reorder API Contract
+  description: API contract for drag-and-drop photo reordering functionality
+  version: 1.0.0
+  contact:
+    name: Collaged Development
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /collages/{collage_guid}/photos/{photo_id}:
+    patch:
+      summary: Update photo ordinal for reordering
+      description: |
+        Updates a photo's ordinal field to change its position in the collage.
+        Used by drag-and-drop reordering functionality.
+        Requires write access (rw_guid).
+      operationId: updatePhotoOrdinal
+      tags:
+        - Photos
+        - Reordering
+      parameters:
+        - name: collage_guid
+          in: path
+          required: true
+          description: Either r_guid (read-only) or rw_guid (read-write) - must be rw_guid for updates
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        - name: photo_id
+          in: path
+          required: true
+          description: MongoDB ObjectId of the photo
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: "507f1f77bcf86cd799439011"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - photo
+              properties:
+                photo:
+                  type: object
+                  required:
+                    - ordinal
+                  properties:
+                    ordinal:
+                      type: integer
+                      minimum: 1
+                      description: New position in photo sequence (1-indexed)
+                      example: 3
+                    caption:
+                      type: string
+                      description: Optional photo caption (can be updated simultaneously)
+                      example: "Vacation photo"
+                    size:
+                      type: integer
+                      minimum: 1
+                      description: Grid cell count (width × height)
+                      example: 6
+                    width:
+                      type: integer
+                      minimum: 1
+                      description: Grid cells horizontally
+                      example: 3
+                    height:
+                      type: integer
+                      minimum: 1
+                      description: Grid cells vertically
+                      example: 2
+                    custom_aspect:
+                      type: boolean
+                      description: Whether user manually resized (true) or using original aspect (false)
+                      example: false
+            examples:
+              reorder_only:
+                summary: Reorder photo to position 3
+                value:
+                  photo:
+                    ordinal: 3
+              reorder_with_resize:
+                summary: Reorder and resize simultaneously
+                value:
+                  photo:
+                    ordinal: 5
+                    size: 8
+                    width: 4
+                    height: 2
+                    custom_aspect: true
+      responses:
+        '200':
+          description: Photo updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+              examples:
+                success:
+                  summary: Successful update response
+                  value:
+                    id:
+                      $oid: "507f1f77bcf86cd799439011"
+                    caption: "Vacation photo"
+                    ordinal: 3
+                    size: 6
+                    width: 3
+                    height: 2
+                    custom_aspect: false
+                    image_width: 1920
+                    image_height: 1080
+                    image_hash: "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+                    image_url: "/rails/active_storage/blobs/..."
+        '403':
+          description: Forbidden - attempting to edit with read-only GUID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Write access required"
+                status: 403
+        '404':
+          description: Photo or collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Photo not found"
+                status: 404
+        '422':
+          description: Unprocessable Entity - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                errors:
+                  ordinal: ["must be greater than 0"]
+                status: 422
+      security:
+        - csrf_token: []
+
+  /collages/{collage_guid}/photos:
+    get:
+      summary: List all photos in collage
+      description: |
+        Retrieves all photos for a collage, ordered by ordinal field.
+        Used by grid controller to render photos and handle reordering.
+      operationId: listPhotos
+      tags:
+        - Photos
+      parameters:
+        - name: collage_guid
+          in: path
+          required: true
+          description: Either r_guid (read-only) or rw_guid (read-write)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+              example:
+                - id:
+                    $oid: "507f1f77bcf86cd799439011"
+                  caption: "Photo 1"
+                  ordinal: 1
+                  size: 4
+                  width: 2
+                  height: 2
+                  custom_aspect: false
+                  image_width: 1600
+                  image_height: 1200
+                  image_hash: "abc123..."
+                  image_url: "/rails/active_storage/blobs/..."
+                - id:
+                    $oid: "507f1f77bcf86cd799439012"
+                  caption: "Photo 2"
+                  ordinal: 2
+                  size: 6
+                  width: 3
+                  height: 2
+                  custom_aspect: false
+                  image_width: 1920
+                  image_height: 1080
+                  image_hash: "def456..."
+                  image_url: "/rails/active_storage/blobs/..."
+        '404':
+          description: Collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Photo:
+      type: object
+      required:
+        - id
+        - ordinal
+        - size
+        - width
+        - height
+        - image_width
+        - image_height
+        - image_hash
+        - image_url
+      properties:
+        id:
+          type: object
+          description: MongoDB ObjectId format
+          required:
+            - $oid
+          properties:
+            $oid:
+              type: string
+              pattern: '^[0-9a-fA-F]{24}$'
+              example: "507f1f77bcf86cd799439011"
+        caption:
+          type: string
+          nullable: true
+          description: Optional user-provided caption
+          example: "Summer vacation"
+        ordinal:
+          type: integer
+          minimum: 1
+          description: Position in photo sequence (1-indexed)
+          example: 1
+        size:
+          type: integer
+          minimum: 1
+          description: Grid cell count (width × height)
+          example: 6
+        width:
+          type: integer
+          minimum: 1
+          description: Number of grid cells horizontally
+          example: 3
+        height:
+          type: integer
+          minimum: 1
+          description: Number of grid cells vertically
+          example: 2
+        custom_aspect:
+          type: boolean
+          description: True if user manually resized, false if using original aspect ratio
+          example: false
+        image_width:
+          type: integer
+          description: Original image width in pixels
+          example: 1920
+        image_height:
+          type: integer
+          description: Original image height in pixels
+          example: 1080
+        image_hash:
+          type: string
+          pattern: '^[a-f0-9]{40}$'
+          description: SHA1 hash of image data for duplicate detection
+          example: "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+        image_url:
+          type: string
+          format: uri
+          description: URL to access the image (ActiveStorage blob path)
+          example: "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6..."
+
+    Error:
+      type: object
+      required:
+        - error
+        - status
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Photo not found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+
+    ValidationError:
+      type: object
+      required:
+        - errors
+        - status
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Field-specific validation error messages
+          example:
+            ordinal: ["must be greater than 0"]
+            size: ["must be present"]
+        status:
+          type: integer
+          description: HTTP status code
+          example: 422
+
+  securitySchemes:
+    csrf_token:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Rails CSRF token from meta tag
+
+tags:
+  - name: Photos
+    description: Photo management endpoints
+  - name: Reordering
+    description: Drag-and-drop reordering functionality

@@ -17,8 +17,6 @@ class Collage
   validates_presence_of :rw_guid
   validates_presence_of :title
 
-  attr_accessible :title
-
   after_initialize :write_access_on_initialize
   attr_accessor :write_access
   def write_access
@@ -62,8 +60,8 @@ class Collage
 
   def initialize_guids
     begin
-      r = self.rw_guid = UUIDTools::UUID.random_create.to_s()
-      rw = self.r_guid = UUIDTools::UUID.random_create.to_s()
+      r = self.rw_guid = SecureRandom.uuid
+      rw = self.r_guid = SecureRandom.uuid
     end until self.class.any_of(
       {r_guid: r},{rw_guid: r},
       {r_guid: rw},{rw_guid: rw},

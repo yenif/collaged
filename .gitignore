@@ -3,5 +3,7 @@ db/*.sqlite3
 log/*.log
 tmp/
 .sass-cache/
+public/assets
 public/uploads
 *.swp
+coverage/

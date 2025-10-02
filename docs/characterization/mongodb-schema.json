@@ -1,0 +1,283 @@
+{
+  "database": "collaged",
+  "characterization_date": "2025-09-30",
+  "mongoid_version": "3.1.4",
+  "mongodb_version": "unknown (cannot connect)",
+  "note": "Schema characterized from Mongoid model definitions, not live database",
+
+  "collections": {
+    "collages": {
+      "description": "Main collection for collages (embedded photos)",
+      "type": "document",
+      "fields": {
+        "_id": {
+          "type": "BSON::ObjectId",
+          "required": true,
+          "description": "MongoDB default identifier"
+        },
+        "r_guid": {
+          "type": "String",
+          "required": true,
+          "unique": true,
+          "description": "Read-only GUID for public sharing",
+          "format": "UUID v4 (36 chars with dashes)",
+          "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "generated_by": "UUIDTools::UUID.random_create.to_s"
+        },
+        "rw_guid": {
+          "type": "String",
+          "required": true,
+          "unique": true,
+          "description": "Read-write GUID for editing",
+          "format": "UUID v4 (36 chars with dashes)",
+          "example": "b2c3d4e5-f6g7-8901-bcde-f12345678901",
+          "generated_by": "UUIDTools::UUID.random_create.to_s"
+        },
+        "title": {
+          "type": "String",
+          "required": true,
+          "description": "Collage title",
+          "validations": ["presence"]
+        },
+        "photos": {
+          "type": "Array",
+          "embedded": true,
+          "description": "Embedded photo documents (not separate collection)",
+          "ordered_by": "ordinal ASC",
+          "schema": {
+            "_id": {
+              "type": "BSON::ObjectId",
+              "required": true,
+              "description": "Photo identifier within collage"
+            },
+            "caption": {
+              "type": "String",
+              "required": false,
+              "description": "Optional photo caption"
+            },
+            "ordinal": {
+              "type": "Integer",
+              "required": false,
+              "indexed": true,
+              "description": "Sort order for photos in collage"
+            },
+            "size": {
+              "type": "Integer",
+              "required": false,
+              "description": "Grid size in cells (width × height)",
+              "default": 1
+            },
+            "height": {
+              "type": "Integer",
+              "required": false,
+              "description": "Grid height in cells (calculated)"
+            },
+            "width": {
+              "type": "Integer",
+              "required": false,
+              "description": "Grid width in cells (calculated)"
+            },
+            "custom_aspect": {
+              "type": "Boolean",
+              "required": false,
+              "description": "True if user manually resized (overrides image aspect)"
+            },
+            "image": {
+              "type": "String",
+              "required": false,
+              "description": "CarrierWave image file path",
+              "example": "uploads/collage/photo/image/507f1f77bcf86cd799439011/photo.jpg"
+            },
+            "image_height": {
+              "type": "Integer",
+              "required": false,
+              "description": "Original image height in pixels"
+            },
+            "image_width": {
+              "type": "Integer",
+              "required": false,
+              "description": "Original image width in pixels"
+            },
+            "image_hash": {
+              "type": "String",
+              "required": false,
+              "description": "SHA1 hash of image bytes for duplicate detection",
+              "format": "40 hexadecimal characters",
+              "example": "a1b2c3d4e5f67890abcdef1234567890abcdef12"
+            }
+          }
+        },
+        "created_at": {
+          "type": "DateTime",
+          "required": false,
+          "description": "Mongoid timestamp (if enabled)"
+        },
+        "updated_at": {
+          "type": "DateTime",
+          "required": false,
+          "description": "Mongoid timestamp (if enabled)"
+        }
+      },
+      "indexes": [
+        {
+          "name": "r_guid_1",
+          "keys": {
+            "r_guid": 1
+          },
+          "unique": true,
+          "sparse": false,
+          "description": "Unique index for read-only GUID lookups"
+        },
+        {
+          "name": "rw_guid_1",
+          "keys": {
+            "rw_guid": 1
+          },
+          "unique": true,
+          "sparse": false,
+          "description": "Unique index for read-write GUID lookups"
+        },
+        {
+          "name": "photos.ordinal_1",
+          "keys": {
+            "photos.ordinal": 1
+          },
+          "unique": false,
+          "sparse": false,
+          "description": "Index for sorting embedded photos by ordinal"
+        },
+        {
+          "name": "_id_",
+          "keys": {
+            "_id": 1
+          },
+          "unique": true,
+          "sparse": false,
+          "description": "MongoDB default _id index"
+        }
+      ],
+      "constraints": {
+        "guid_collision_prevention": "initialize_guids method loops until both r_guid and rw_guid are unique across all collages",
+        "guid_format": "36-character UUID v4 with dashes (8-4-4-4-12)",
+        "photo_constraint": "size = width × height (enforced by set_default_dimensions callback)",
+        "ordinal_sorting": "photos array ordered by ordinal ASC via Mongoid embeds_many order clause"
+      },
+      "queries": {
+        "find_by_guid": {
+          "pattern": "Collage.any_of({r_guid: guid}, {rw_guid: guid}).first",
+          "description": "Finds collage by either read or write GUID in single query",
+          "sets_write_access": "True if guid matches rw_guid, false if matches r_guid"
+        },
+        "find_by_r_guid": {
+          "pattern": "Collage.where(r_guid: guid).first",
+          "description": "Direct lookup by read-only GUID (uses unique index)"
+        },
+        "find_by_rw_guid": {
+          "pattern": "Collage.where(rw_guid: guid).first",
+          "description": "Direct lookup by read-write GUID (uses unique index)"
+        }
+      },
+      "sample_document": {
+        "_id": "507f1f77bcf86cd799439011",
+        "r_guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "rw_guid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "title": "My Vacation Photos",
+        "photos": [
+          {
+            "_id": "507f191e810c19729de860ea",
+            "caption": "Beach sunset",
+            "ordinal": 1,
+            "size": 4,
+            "height": 2,
+            "width": 2,
+            "custom_aspect": false,
+            "image": "uploads/collage/photo/image/507f191e810c19729de860ea/sunset.jpg",
+            "image_height": 1920,
+            "image_width": 1080,
+            "image_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef12"
+          },
+          {
+            "_id": "507f191e810c19729de860eb",
+            "caption": null,
+            "ordinal": 2,
+            "size": 6,
+            "height": 3,
+            "width": 2,
+            "custom_aspect": true,
+            "image": "uploads/collage/photo/image/507f191e810c19729de860eb/mountains.jpg",
+            "image_height": 2048,
+            "image_width": 1536,
+            "image_hash": "b2c3d4e5f6a78901bcdef12345678901bcdef123"
+          }
+        ],
+        "created_at": "2025-09-30T00:00:00.000Z",
+        "updated_at": "2025-09-30T12:34:56.789Z"
+      }
+    }
+  },
+
+  "data_integrity_rules": {
+    "guid_uniqueness": {
+      "rule": "All GUIDs (both r_guid and rw_guid) must be unique across entire collection",
+      "enforcement": "Unique indexes + application-level collision detection",
+      "collision_handling": "Regenerate GUIDs in loop until no collision"
+    },
+    "photo_embedding": {
+      "rule": "Photos are embedded documents, not separate collection",
+      "implication": "Photos do not exist independently of collages",
+      "cascade_delete": "Deleting collage deletes all embedded photos"
+    },
+    "size_constraint": {
+      "rule": "For each photo: size = width × height",
+      "enforcement": "before_save callback recalculates dimensions if constraint violated",
+      "validation": "Client and server both calculate dimensions using same algorithm"
+    },
+    "ordinal_ordering": {
+      "rule": "Photos returned in ordinal ASC order",
+      "enforcement": "Mongoid embeds_many order: [[:ordinal, :asc]]",
+      "default": "If ordinal not set, MongoDB may return in insertion order (undefined)"
+    },
+    "aspect_ratio_preservation": {
+      "rule": "Grid dimensions chosen to preserve image aspect ratio",
+      "exception": "If custom_aspect = true, use manually set aspect instead",
+      "algorithm": "Binary search through prime factors to find nearest aspect match"
+    }
+  },
+
+  "migration_considerations": {
+    "to_active_storage": {
+      "image_field": "CarrierWave 'image' field → ActiveStorage has_one_attached :image",
+      "migration_strategy": "Dual-read pattern (support both during transition)",
+      "hash_verification": "Verify SHA1 hash matches after migration to ensure data integrity",
+      "variants": "ActiveStorage variants needed: :thumb, :grid, :full"
+    },
+    "to_postgres": {
+      "challenge": "Embedded photos → JOIN table or JSON column",
+      "recommended": "Keep embedded as PostgreSQL JSONB for similar structure",
+      "alternative": "Create separate photos table with foreign key to collages",
+      "index_impact": "JSONB indexes differ from MongoDB embedded document indexes"
+    },
+    "guid_generation": {
+      "current": "UUIDTools::UUID.random_create.to_s",
+      "modern": "SecureRandom.uuid (Ruby 3.x stdlib)",
+      "compatibility": "Both generate UUID v4, format identical"
+    }
+  },
+
+  "performance_notes": {
+    "guid_lookups": "O(1) via unique indexes on r_guid and rw_guid",
+    "photo_sorting": "O(n log n) but n is small (typically <100 photos per collage)",
+    "embedded_photos": "Entire collage document loaded at once (no N+1 queries)",
+    "duplicate_detection": "Requires full collection scan if no index on photos.image_hash",
+    "recommended_index": "Add index on 'photos.image_hash' for faster duplicate detection"
+  },
+
+  "validation_commands": {
+    "list_indexes": "mongo collaged_development --eval 'db.collages.getIndexes()'",
+    "count_collages": "mongo collaged_development --eval 'db.collages.count()'",
+    "sample_document": "mongo collaged_development --eval 'db.collages.findOne()'",
+    "check_unique_guids": "mongo collaged_development --eval 'db.collages.aggregate([{$group: {_id: \"$r_guid\", count: {$sum: 1}}}, {$match: {count: {$gt: 1}}}])'",
+    "photo_size_validation": "mongo collaged_development --eval 'db.collages.find({\"photos.size\": {$ne: null}, $where: \"this.photos.some(p => p.size !== p.width * p.height)\"})'",
+    "create_indexes": "rails db:mongoid:create_indexes"
+  }
+}

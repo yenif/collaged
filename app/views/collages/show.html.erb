@@ -1,0 +1,30 @@
+<div id='content'
+     data-controller="grid upload"
+     data-grid-collage-id-value="<%= @collage.to_param %>"
+     data-upload-url-value="<%= collage_photos_path(@collage) %>"
+     data-upload-collage-id-value="<%= @collage.to_param %>">
+
+  <div id='header'>
+    <h1><%= @collage.title %></h1>
+  </div>
+
+  <div id='collage_photos' data-grid-target="container"></div>
+
+  <div id='toolbox'>
+    <input type="file"
+           multiple
+           accept="image/jpeg,image/png,image/gif"
+           style="display: none;"
+           data-upload-target="fileInput"
+           data-action="change->upload#filesSelected" />
+
+    <a id='pickfiles'
+       href='#'
+       data-upload-target="pickFilesButton"
+       data-action="click->upload#pickFiles">choose files</a>
+
+    <br />
+
+    <div id='filelist' data-upload-target="fileList"></div>
+  </div>
+</div>

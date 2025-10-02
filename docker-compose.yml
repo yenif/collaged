@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: collaged-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      MONGO_INITDB_DATABASE: collaged_production
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  web:
+    build: .
+    container_name: collaged-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: production
+      MONGODB_URL: mongodb://mongodb:27017/collaged_production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-changeme-generate-with-rails-secret}
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+    volumes:
+      - ./storage:/app/storage
+      - ./log:/app/log
+      - ./tmp:/app/tmp
+    command: >
+      bash -c "
+        bundle exec rails db:mongoid:create_indexes &&
+        bundle exec rails server -b 0.0.0.0 -p 3000
+      "
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local

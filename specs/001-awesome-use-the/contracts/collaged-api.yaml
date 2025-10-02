@@ -1,0 +1,533 @@
+openapi: 3.0.3
+info:
+  title: Collaged API
+  description: Photo collage creation and management API for dependency modernization
+  version: 2.0.0
+  contact:
+    name: Collaged Modernization Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://collaged.example.com
+    description: Production
+
+paths:
+  /collages:
+    post:
+      summary: Create new collage
+      description: |
+        Creates a new collage with a title. Generates two unique GUIDs:
+        one for read-only access (r_guid) and one for read-write access (rw_guid).
+        **Spec**: FR-001, FR-003, FR-004
+      operationId: createCollage
+      tags: [Collages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  example: "My Vacation Photos"
+      responses:
+        '201':
+          description: Collage created successfully
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/collages/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollageWithWrite'
+        '422':
+          description: Validation error (e.g., blank title)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /collages/{guid}:
+    get:
+      summary: Get collage by GUID
+      description: |
+        Retrieves collage by either r_guid (read-only) or rw_guid (read-write).
+        Response includes write_access flag and only exposes rw_guid if accessed via write URL.
+        **Spec**: FR-005, FR-033, FR-034
+      operationId: getCollage
+      tags: [Collages]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Collage found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/CollageReadOnly'
+                  - $ref: '#/components/schemas/CollageWithWrite'
+        '404':
+          description: Collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Update collage
+      description: |
+        Updates collage title. Requires write access (rw_guid).
+        **Spec**: FR-007 (implicit write access check)
+      operationId: updateCollage
+      tags: [Collages]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+      responses:
+        '200':
+          description: Collage updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollageWithWrite'
+        '403':
+          description: Access denied (read-only GUID used)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete collage
+      description: |
+        Permanently deletes collage and all associated photos.
+        Requires write access (rw_guid). Prompts for confirmation (handled client-side).
+        **Spec**: FR-007, FR-008, FR-009
+      operationId: deleteCollage
+      tags: [Collages]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Collage deleted successfully
+        '403':
+          description: Access denied (read-only GUID used)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /collages/{guid}/photos:
+    get:
+      summary: List photos in collage
+      description: |
+        Returns all photos for a collage, ordered by ordinal field.
+        **Spec**: FR-017 (placement order)
+      operationId: listPhotos
+      tags: [Photos]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Photos list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+        '404':
+          description: Collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Upload photo to collage
+      description: |
+        Uploads a new photo via multipart/form-data. Accepts JPG, JPEG, GIF, PNG up to 10MB.
+        Calculates image hash for duplicate detection. Automatically positions in grid.
+        Returns 409 if duplicate detected (first time shows warning, subsequent silent).
+        **Spec**: FR-010-FR-016
+      operationId: uploadPhoto
+      tags: [Photos]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                caption:
+                  type: string
+      responses:
+        '201':
+          description: Photo uploaded successfully
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '403':
+          description: Access denied (read-only GUID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Duplicate photo detected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Duplicate photo detected"
+                  show_warning:
+                    type: boolean
+                    description: "True on first duplicate in session"
+        '413':
+          description: File too large (>10MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Invalid file type or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /collages/{guid}/photos/{photo_id}:
+    get:
+      summary: Get photo details
+      description: Returns photo metadata and image URL
+      operationId: getPhoto
+      tags: [Photos]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Photo found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '404':
+          description: Photo or collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Update photo metadata
+      description: |
+        Updates photo position (size, width, height, ordinal) or caption.
+        Grid re-flow happens client-side. Triggers last-write-wins for concurrent edits.
+        **Spec**: FR-029-FR-035, FR-040
+      operationId: updatePhoto
+      tags: [Photos]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                caption:
+                  type: string
+                size:
+                  type: integer
+                  minimum: 1
+                width:
+                  type: integer
+                  minimum: 1
+                height:
+                  type: integer
+                  minimum: 1
+                custom_aspect:
+                  type: boolean
+                ordinal:
+                  type: integer
+      responses:
+        '200':
+          description: Photo updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '403':
+          description: Access denied (read-only GUID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Concurrent edit conflict (informational, last-write-wins)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '422':
+          description: Validation error (e.g., size != width * height)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete photo
+      description: |
+        Permanently removes photo from collage. Grid re-flows to fill gap.
+        **Spec**: FR-021, FR-022
+      operationId: deletePhoto
+      tags: [Photos]
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Photo deleted
+        '403':
+          description: Access denied (read-only GUID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Photo or collage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CollageWithWrite:
+      type: object
+      required: [id, title, r_guid, rw_guid, write_access, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: Collage ID (same as rw_guid when write access)
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        title:
+          type: string
+          example: "My Vacation Photos"
+        r_guid:
+          type: string
+          format: uuid
+          description: Read-only access GUID
+        rw_guid:
+          type: string
+          format: uuid
+          description: Read-write access GUID (only exposed with write access)
+        write_access:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CollageReadOnly:
+      type: object
+      required: [id, title, r_guid, write_access, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: Collage ID (r_guid when read-only)
+          example: "b2c3d4e5-f6g7-8901-bcde-f12345678901"
+        title:
+          type: string
+        r_guid:
+          type: string
+          format: uuid
+        write_access:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Photo:
+      type: object
+      required: [id, ordinal, size, width, height, image_url, image_height, image_width, image_hash]
+      properties:
+        id:
+          type: string
+          description: Photo ID (MongoDB ObjectId)
+          example: "507f1f77bcf86cd799439011"
+        caption:
+          type: string
+          nullable: true
+        ordinal:
+          type: integer
+          description: Sort order in collage
+          example: 0
+        size:
+          type: integer
+          description: Grid cell count (width * height)
+          minimum: 1
+          example: 12
+        width:
+          type: integer
+          description: Grid cells horizontally
+          minimum: 1
+          example: 3
+        height:
+          type: integer
+          description: Grid cells vertically
+          minimum: 1
+          example: 4
+        custom_aspect:
+          type: boolean
+          description: True if user manually resized
+          default: false
+        image_url:
+          type: string
+          description: URL to image file (ActiveStorage blob path)
+          example: "/rails/active_storage/blobs/redirect/..."
+        image_height:
+          type: integer
+          description: Original image height in pixels
+          example: 2048
+        image_width:
+          type: integer
+          description: Original image width in pixels
+          example: 1536
+        image_hash:
+          type: string
+          description: SHA1 hash for duplicate detection
+          example: "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Validation failed: Title can't be blank"
+        code:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        details:
+          type: object
+          description: Additional error context (field-specific errors, etc.)
+
+  securitySchemes: {}
+
+tags:
+  - name: Collages
+    description: Collage CRUD operations
+  - name: Photos
+    description: Photo upload and management within collages

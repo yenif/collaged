@@ -1,5 +1,6 @@
 class Photo
   include Mongoid::Document
+  include GlobalID::Identification
 
   field :caption, type: String
 
@@ -11,6 +12,7 @@ class Photo
   field :width, type: Integer
   field :custom_aspect, type: Boolean
 
+  # Image upload using CarrierWave
   mount_uploader :image, ImageUploader
   field :image_height, type: Integer
   field :image_width, type: Integer
@@ -18,12 +20,21 @@ class Photo
 
   embedded_in :collage
 
-  attr_accessible :caption, :ordinal, :image, :size, :height, :width, :custom_aspect
-
+  before_create :set_ordinal
   before_save :set_default_dimensions
 
+  # Image URL using CarrierWave
   def image_url
-    self.image.url
+    image.url if image.present?
+  end
+
+  # Image variants using CarrierWave versions
+  def image_thumb_url
+    image.thumb.url if image.present?
+  end
+
+  def image_grid_url
+    image.grid.url if image.present?
   end
 
   def as_json(params = {})
@@ -36,6 +47,11 @@ class Photo
   end
 
   private
+  def set_ordinal
+    # Set ordinal to the next available value (max + 1)
+    self.ordinal ||= (collage.photos.map(&:ordinal).compact.max || -1) + 1
+  end
+
   def set_default_dimensions
     unless self.height && self.width && self.height * self.width == self.size
       factors = (self.size ||= 1).factors
